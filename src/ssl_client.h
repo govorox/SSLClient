@@ -1,5 +1,6 @@
-/* Provide SSL/TLS functions to ESP32 with Arduino IDE
+/* Provide SSL/TLS functions to ESP32 with Arduino
  * by Evandro Copercini - 2017 - Apache 2.0 License
+ * Additions Copyright (C) 2019 Vadim Govorovski.
  */
 
 #ifndef ARD_SSL_H

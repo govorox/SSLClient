@@ -1,7 +1,8 @@
 /*
   SSLClient.h - Base class that provides Client SSL to ESP32
-  Copyright (c) 2011 Adrian McEwen.  All right reserved.
+  Additions (c) 2011 Adrian McEwen.  All right reserved.
   Additions Copyright (C) 2017 Evandro Luis Copercini.
+  Additions Copyright (C) 2019 Vadim Govorovski.
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either

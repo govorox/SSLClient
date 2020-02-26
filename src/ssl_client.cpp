@@ -1,9 +1,10 @@
 /* Provide SSL/TLS functions to ESP32 with Arduino IDE
 *
-* Adapted from the ssl_client1 example of mbedtls.
+* Adapted from the ssl_client example of mbedtls.
 *
 * Original Copyright (C) 2006-2015, ARM Limited, All Rights Reserved, Apache 2.0 License.
 * Additions Copyright (C) 2017 Evandro Luis Copercini, Apache 2.0 License.
+* Additions Copyright (C) 2019 Vadim Govorovski.
 */
 
 #include "Arduino.h"
