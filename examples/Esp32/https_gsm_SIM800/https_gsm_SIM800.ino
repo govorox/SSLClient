@@ -19,6 +19,7 @@
 #include "ca_cert.h"
 
 // ESP32 LilyGo-T-Call-SIM800 SIM800L_IP5306_VERSION_20190610 (v1.3) pins definition
+#define MODEM_UART_BAUD 9600
 #define MODEM_RST 5
 #define MODEM_PWRKEY 4
 #define MODEM_POWER_ON 23
@@ -26,9 +27,7 @@
 #define MODEM_RX 26
 #define I2C_SDA 21
 #define I2C_SCL 22
-#define LED_GPIO 13
-#define LED_ON HIGH
-#define LED_OFF LOW
+#define LED_PIN 13
 #define IP5306_ADDR 0x75
 #define IP5306_REG_SYS_CTL0 0x00
 
@@ -53,7 +52,7 @@ const char simPIN[] = "";    // SIM card PIN code, if any
 const char hostname[] = "www.howsmyssl.com";
 int port = 443;
 
-//Layers stack
+// Layers stack
 TinyGsm sim_modem(SerialAT);
 TinyGsmClient gsm_transpor_layer(sim_modem);
 SSLClient secure_presentation_layer(&gsm_transpor_layer);
@@ -83,7 +82,8 @@ void setupModem()
   pinMode(MODEM_RST, OUTPUT);
   pinMode(MODEM_PWRKEY, OUTPUT);
   pinMode(MODEM_POWER_ON, OUTPUT);
-
+  pinMode(LED_PIN, OUTPUT);
+  
   // Reset pin high
   digitalWrite(MODEM_RST, HIGH);
 
@@ -92,49 +92,58 @@ void setupModem()
 
   // Pull down PWRKEY for more than 1 second according to manual requirements
   digitalWrite(MODEM_PWRKEY, HIGH);
-  delay(100);
+  delay(200);
   digitalWrite(MODEM_PWRKEY, LOW);
-  delay(1000);
+  delay(1200);
   digitalWrite(MODEM_PWRKEY, HIGH);
 
   // Initialize the indicator as an output
-  pinMode(LED_GPIO, OUTPUT);
-  digitalWrite(LED_GPIO, LED_OFF);
+  digitalWrite(LED_PIN, LOW);
 }
 
 void setup()
 {
   SerialMon.begin(9600);
-  delay(10);
+  delay(100);
 
-  // Start power management
+  // Start board power management
   if (!setupPMU())
   {
-    Serial.println("Setting power error");
+    Serial.println("Setting board power management error");
   }
+
+  // Set SIM module baud rate and UART pins
+  SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
 
   //Add CA Certificate
   secure_presentation_layer.setCACert(root_ca);
 
-  // Modem initial setup
+  // SIM modem initial setup
   setupModem();
-
-  // Set SIM module baud rate and UART pins
-  SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
 }
 
 void loop()
 {
-  SerialMon.println("Initializing modem...");
-  // Restart takes quite some time
-  //modem.restart();
-  // Use modem.init() if you don't need the complete restart
-  sim_modem.init();
+  SerialMon.print("Initializing modem...");
+  if (!sim_modem.init())
+  {
+    SerialMon.print(" fail... restarting modem...");
+    setupModem();
+    // Restart takes quite some time
+    // Use modem.init() if you don't need the complete restart
+    if (!sim_modem.restart())
+    {
+      SerialMon.println(" fail... even after restart");
+      return;
+    }
+  }
+  SerialMon.println(" OK");
 
-  // Get moden info
+  // General information
+  String name = sim_modem.getModemName();
+  Serial.println("Modem Name: " + name);
   String modem_info = sim_modem.getModemInfo();
-  SerialMon.print("Modem: ");
-  SerialMon.println(modem_info);
+  Serial.println("Modem Info: " + modem_info);
 
   // Unlock your SIM card with a PIN if needed
   if (strlen(simPIN) && sim_modem.getSimStatus() != 3)
@@ -151,12 +160,16 @@ void loop()
     return;
   }
   SerialMon.println(" OK");
+  
   // Connect to the GPRS network
-  if (sim_modem.isNetworkConnected())
+  SerialMon.print("Connecting to network...");
+  if (!sim_modem.isNetworkConnected())
   {
-    SerialMon.println("GPRS Network connected");
+    SerialMon.println(" fail");
+    delay(10000);
+    return;
   }
-  digitalWrite(LED_GPIO, LED_ON);
+  SerialMon.println(" OK");
 
   // Connect to APN
   SerialMon.print(F("Connecting to APN: "));
@@ -167,30 +180,54 @@ void loop()
     delay(10000);
     return;
   }
+  digitalWrite(LED_PIN, HIGH);
   SerialMon.println(" OK");
 
-  // Make HTTP Get request
-  Serial.println("Making GET request...");
-  http_client.get("/a/check");
+  // More info..
+  Serial.println("");
+  String ccid = sim_modem.getSimCCID();
+  Serial.println("CCID: " + ccid);
+  String imei = sim_modem.getIMEI();
+  Serial.println("IMEI: " + imei);
+  String cop = sim_modem.getOperator();
+  Serial.println("Operator: " + cop);
+  IPAddress local = sim_modem.localIP();
+  Serial.println("Local IP: " + String(local));
+  int csq = sim_modem.getSignalQuality();
+  Serial.println("Signal quality: " + String(csq));
 
-  int status_code = http_client.responseStatusCode();
-  String response = http_client.responseBody();
+  /// HTTP Test
+  if (sim_modem.isGprsConnected())
+  {
+    Serial.println("");
+    Serial.println("Making GET request");
+    http_client.get("/a/check");
 
-  Serial.print("Status code: ");
-  Serial.println(status_code);
-  Serial.print("Response: ");
-  Serial.println(response);
+    int status_code = http_client.responseStatusCode();
+    String response = http_client.responseBody();
 
-  http_client.stop();
+    Serial.print("Status code: ");
+    Serial.println(status_code);
+    Serial.print("Response: ");
+    Serial.println(response);
+
+    http_client.stop();
+  }
+  else
+  {
+    Serial.println("...not connected");
+  }
 
   // Disconnect GPRS
   sim_modem.gprsDisconnect();
   SerialMon.println("GPRS disconnected");
-  digitalWrite(LED_GPIO, LED_OFF);
+  digitalWrite(LED_PIN, LOW);
 
   //Turn off the moden (if use, you need run setupModem() again)
   //sim_modem.poweroff();
   //SerialMon.println("Modem poweroff");
+  //delay(1000);
+  //setupModem();
 
-  delay(10000);
+  delay(15000);
 }
