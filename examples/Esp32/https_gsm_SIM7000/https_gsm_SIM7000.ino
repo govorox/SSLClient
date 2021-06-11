@@ -1,16 +1,17 @@
 /**************************************************************
  *
- * ESP32 LilyGo-T-Call-SIM800 Example
+ * ESP32 LilyGO-T-SIM7000G Example
  *
  * HTTPS (TLS/SLL) with CA Certificate via "TinyGsm.h": https://github.com/vshymanskyy/TinyGSM
- * Tested on SIM800L_IP5306_VERSION_20190610 (v1.3) (R14.18)
+ * Tested on Version 20200415
  *
- * About board: https://github.com/Xinyuan-LilyGO/LilyGo-T-Call-SIM800
- * About SIM800L_IP5306 v1.3: https://github.com/Xinyuan-LilyGO/LilyGo-T-Call-SIM800/blob/master/doc/SIM800L_IP5306.MD    
- * Base example: https://github.com/Xinyuan-LilyGO/LilyGo-T-Call-SIM800/tree/master/examples/Arduino_TinyGSM  
+ * About board: https://github.com/Xinyuan-LilyGO/LilyGO-T-SIM7000G
+ * About Version 20200415: https://github.com/Xinyuan-LilyGO/LilyGO-T-SIM7000G/blob/master/Historical/SIM7000G_20200415/README.MD
+ * Base example:  https://github.com/Xinyuan-LilyGO/LilyGO-T-SIM7000G/blob/master/examples/Arduino_TinyGSM/AllFunctions/AllFunctions.ino
+ *                https://github.com/Xinyuan-LilyGO/LilyGO-T-SIM7000G/blob/master/examples/Arduino_NetworkTest/Arduino_NetworkTest.ino
+ *                https://github.com/Xinyuan-LilyGO/LilyGO-T-SIM7000G/blob/master/examples/Arduino_Azure_IoTHub/Arduino_Azure_IoTHub.ino
  * 
  **************************************************************/
-#include <Wire.h>
 #include "SSLClient.h"
 //To make http request esay: https://github.com/arduino-libraries/ArduinoHttpClient
 #include <ArduinoHttpClient.h>
@@ -18,26 +19,21 @@
 //Please enter your CA certificate in ca_cert.h
 #include "ca_cert.h"
 
-// ESP32 LilyGo-T-Call-SIM800 SIM800L_IP5306_VERSION_20190610 (v1.3) pins definition
+// ESP32 LilyGO-T-SIM7000G pins definition
 #define MODEM_UART_BAUD 9600
-#define MODEM_RST 5
-#define MODEM_PWRKEY 4
-#define MODEM_POWER_ON 23
+#define MODEM_DTR 25
 #define MODEM_TX 27
 #define MODEM_RX 26
-#define I2C_SDA 21
-#define I2C_SCL 22
-#define LED_PIN 13
-#define IP5306_ADDR 0x75
-#define IP5306_REG_SYS_CTL0 0x00
+#define MODEM_PWRKEY 4
+#define LED_PIN 12
 
 // Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
-// Set serial for AT commands (to the SIM800 module)
+// Set serial for AT commands (to the SIM7000 module)
 #define SerialAT Serial1
 
 // Configure TinyGSM library
-#define TINY_GSM_MODEM_SIM800   // Modem is SIM800
+#define TINY_GSM_MODEM_SIM7000  // Modem is SIM7000
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
 
 // Include after TinyGSM definitions
@@ -58,47 +54,35 @@ TinyGsmClient gsm_transpor_layer(sim_modem);
 SSLClient secure_presentation_layer(&gsm_transpor_layer);
 HttpClient http_client = HttpClient(secure_presentation_layer, hostname, port);
 
-// Power configuration for SIM800L_IP5306_VERSION_20190610 (v1.3) board
-bool setupPMU()
+void turnModemOn()
 {
-  bool en = true;
-  Wire.begin(I2C_SDA, I2C_SCL);
-  Wire.beginTransmission(IP5306_ADDR);
-  Wire.write(IP5306_REG_SYS_CTL0);
-  if (en)
-  {
-    Wire.write(0x37);
-  }
-  else
-  {
-    Wire.write(0x35);
-  }
-  return Wire.endTransmission() == 0;
+  digitalWrite(LED_PIN, LOW);
+
+  pinMode(MODEM_PWRKEY, OUTPUT);
+  digitalWrite(MODEM_PWRKEY, LOW);
+  delay(1000); //Datasheet Ton mintues = 1S
+  digitalWrite(MODEM_PWRKEY, HIGH);
 }
 
-// Modem initial setup (cold start)
+void turnModemOff()
+{
+  digitalWrite(MODEM_PWRKEY, LOW);
+  delay(1500); //Datasheet Ton mintues = 1.2S
+  digitalWrite(MODEM_PWRKEY, HIGH);
+
+  digitalWrite(LED_PIN, LOW);
+}
+
 void setupModem()
 {
-  pinMode(MODEM_RST, OUTPUT);
-  pinMode(MODEM_PWRKEY, OUTPUT);
-  pinMode(MODEM_POWER_ON, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
-  
-  // Reset pin high
-  digitalWrite(MODEM_RST, HIGH);
+  pinMode(MODEM_PWRKEY, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
 
-  // Turn on the Modem power first
-  digitalWrite(MODEM_POWER_ON, HIGH);
-
-  // Pull down PWRKEY for more than 1 second according to manual requirements
-  digitalWrite(MODEM_PWRKEY, HIGH);
-  delay(200);
-  digitalWrite(MODEM_PWRKEY, LOW);
-  delay(1200);
-  digitalWrite(MODEM_PWRKEY, HIGH);
-
-  // Initialize the indicator as an output
-  digitalWrite(LED_PIN, LOW);
+  turnModemOff();
+  delay(1000);
+  turnModemOn();
+  delay(5000);
 }
 
 void setup()
@@ -106,14 +90,8 @@ void setup()
   SerialMon.begin(9600);
   delay(100);
 
-  // Start board power management
-  if (!setupPMU())
-  {
-    Serial.println("Setting board power management error");
-  }
-
   // Set SIM module baud rate and UART pins
-  SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
+  SerialAT.begin(MODEM_UART_BAUD, SERIAL_8N1, MODEM_RX, MODEM_TX);
 
   //Add CA Certificate
   secure_presentation_layer.setCACert(root_ca);
@@ -151,16 +129,33 @@ void loop()
     sim_modem.simUnlock(simPIN);
   }
 
+  // Set modes
+  /*
+    2 Automatic
+    13 GSM only
+    38 LTE only
+    51 GSM and LTE only
+  * * * */
+  sim_modem.setNetworkMode(2);
+  delay(3000);
+  /*
+    1 CAT-M
+    2 NB-Iot
+    3 CAT-M and NB-IoT
+  * * */
+  sim_modem.setPreferredMode(3);
+  delay(3000);
+
   // Wait for network availability
   SerialMon.print("Waiting for network...");
-  if (!sim_modem.waitForNetwork(240000L))
+  if (!sim_modem.waitForNetwork())
   {
     SerialMon.println(" fail");
     delay(10000);
     return;
   }
   SerialMon.println(" OK");
-  
+
   // Connect to the GPRS network
   SerialMon.print("Connecting to network...");
   if (!sim_modem.isNetworkConnected())
@@ -172,12 +167,11 @@ void loop()
   SerialMon.println(" OK");
 
   // Connect to APN
-  SerialMon.print(F("Connecting to APN: "));
+  SerialMon.print("Connecting to APN: ");
   SerialMon.print(apn);
   if (!sim_modem.gprsConnect(apn, gprs_user, gprs_pass))
   {
     SerialMon.println(" fail");
-    delay(10000);
     return;
   }
   digitalWrite(LED_PIN, HIGH);
@@ -196,7 +190,7 @@ void loop()
   int csq = sim_modem.getSignalQuality();
   Serial.println("Signal quality: " + String(csq));
 
-  /// HTTP Test
+  // HTTP Test
   if (sim_modem.isGprsConnected())
   {
     Serial.println("");
@@ -218,16 +212,12 @@ void loop()
     Serial.println("...not connected");
   }
 
-  // Disconnect GPRS
-  sim_modem.gprsDisconnect();
-  SerialMon.println("GPRS disconnected");
-  digitalWrite(LED_PIN, LOW);
-
-  //Turn off the moden (if use, you need run setupModem() again)
+  // Disconnect GPRS and PowerOff
+  // Apparently the "gprsDisconnect()" method (TinyGSM) are not working well with the SIM7000...
+  // ...you have to use additionally "poweroff()".
+  // With that, the modem can be connected again in the next cycle of the loop.
+  //sim_modem.gprsDisconnect();
   //sim_modem.poweroff();
-  //SerialMon.println("Modem poweroff");
-  //delay(1000);
-  //setupModem();
 
   delay(15000);
 }
