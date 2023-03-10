@@ -194,7 +194,7 @@ int SSLClient::read(uint8_t *buf, size_t size)
         buf++;
         peeked = 1;
     }
-    
+
     int res = get_ssl_receive(sslclient, buf, size);
     if (res < 0) {
         stop();
@@ -317,4 +317,8 @@ int SSLClient::lastError(char *buf, const size_t size)
 void SSLClient::setHandshakeTimeout(unsigned long handshake_timeout)
 {
     sslclient->handshake_timeout = handshake_timeout * 1000;
+}
+
+void SSLClient::setClient(Client* client){
+    sslclient->client = client;
 }

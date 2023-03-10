@@ -26,7 +26,7 @@ class SSLClient : public Client
 {
 protected:
     sslclient_context *sslclient;
- 
+
     int _lastError = 0;
 	int _peek = -1;
     int _timeout = 0;
@@ -74,6 +74,8 @@ public:
     bool loadPrivateKey(Stream& stream, size_t size);
     bool verify(const char* fingerprint, const char* domain_name);
     void setHandshakeTimeout(unsigned long handshake_timeout);
+    void setClient(Client* client);
+
 
     int setTimeout(uint32_t seconds){ return 0; }
 
