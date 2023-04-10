@@ -141,6 +141,8 @@ static int client_net_send( void *ctx, const unsigned char *buf, size_t len ) {
 void ssl_init(sslclient_context *ssl_client, Client *client)
 {
     log_v("Init SSL");
+    // reset embedded pointers to zero
+    memset(ssl_client, 0, sizeof(sslclient_context));
     ssl_client->client = client;
     mbedtls_ssl_init(&ssl_client->ssl_ctx);
     mbedtls_ssl_config_init(&ssl_client->ssl_conf);
@@ -250,6 +252,7 @@ int start_ssl_client(sslclient_context *ssl_client, const char *host, uint32_t p
         ret = mbedtls_pk_parse_key(&ssl_client->client_key, (const unsigned char *)cli_key, strlen(cli_key) + 1, NULL, 0);
 
         if (ret != 0) {
+            mbedtls_x509_crt_free(&ssl_client->client_cert); // cert+key are free'd in pair
             return handle_error(ret);
         }
 
@@ -331,10 +334,22 @@ void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, cons
 
     ssl_client->client->stop();
 
+    // avoid memory leak if ssl connection attempt failed
+    if (ssl_client->ssl_conf.ca_chain != NULL) {
+        mbedtls_x509_crt_free(&ssl_client->ca_cert);
+    }
+    if (ssl_client->ssl_conf.key_cert != NULL) {
+        mbedtls_x509_crt_free(&ssl_client->client_cert);
+        mbedtls_pk_free(&ssl_client->client_key);
+    }
+
     mbedtls_ssl_free(&ssl_client->ssl_ctx);
     mbedtls_ssl_config_free(&ssl_client->ssl_conf);
     mbedtls_ctr_drbg_free(&ssl_client->drbg_ctx);
     mbedtls_entropy_free(&ssl_client->entropy_ctx);
+
+    // reset embedded pointers to zero
+    memset(ssl_client, 0, sizeof(sslclient_context));
 }
 
 
