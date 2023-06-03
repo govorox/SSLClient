@@ -132,6 +132,10 @@ static int client_net_send( void *ctx, const unsigned char *buf, size_t len ) {
     //esp_log_buffer_hexdump_internal("SSL.WR", buf, (uint16_t)len, ESP_LOG_VERBOSE);
     
     int result = client->write(buf, len);
+    if (result == 0) {
+        log_e("write failed");
+        result= MBEDTLS_ERR_NET_SEND_FAILED;
+    }
     
     log_d("SSL client TX res=%d len=%d", result, len);
     return result;
