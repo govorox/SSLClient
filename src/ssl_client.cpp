@@ -335,8 +335,8 @@ int start_ssl_client(sslclient_context *ssl_client, const char *host, uint32_t p
 void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key)
 {
     log_v("Cleaning SSL connection.");
-
-    ssl_client->client->stop();
+    if (ssl_client->client != NULL) 
+        ssl_client->client->stop();
 
     // avoid memory leak if ssl connection attempt failed
     if (ssl_client->ssl_conf.ca_chain != NULL) {

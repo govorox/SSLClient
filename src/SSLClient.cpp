@@ -61,11 +61,8 @@ SSLClient::~SSLClient()
 
 void SSLClient::stop()
 {
-    if (sslclient->client >= 0) {
-        //sslclient->client->stop();
-        _connected = false;
-        _peek = -1;
-    }
+    _connected = false;
+    _peek = -1;
     stop_ssl_socket(sslclient, _CA_cert, _cert, _private_key);
 }
 
