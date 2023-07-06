@@ -123,19 +123,27 @@ int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, co
     if(_timeout > 0){
         sslclient->handshake_timeout = _timeout;
     }
-    int ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _cert, _private_key, NULL, NULL);
+    
+    int ret = -1;
+    try {
+        ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _cert, _private_key, NULL, NULL);
+    } catch (...) {
+        log_e("Exception occurred in start_ssl_client");
+        stop();
+        _connected = false;
+        return -2;
+    }
+
     _lastError = ret;
     if (ret < 0) {
         log_e("start_ssl_client: %d", ret);
         stop();
         _connected = false;
-        // return the error code instead of just 0
-        return ret;
+        return 0;
     }
     log_i("SSL connection established");
     _connected = true;
-    // consider returning a non-negative code indicating success
-    return 0;
+    return 1;
 }
 
 
