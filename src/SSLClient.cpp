@@ -98,6 +98,25 @@ int SSLClient::connect(IPAddress ip, uint16_t port, const char *_CA_cert, const 
     return connect(ip.toString().c_str(), port, _CA_cert, _cert, _private_key);
 }
 
+// int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, const char *_cert, const char *_private_key)
+// {
+//     log_d("Connecting to %s:%d", host, port);
+//     if(_timeout > 0){
+//         sslclient->handshake_timeout = _timeout;
+//     }
+//     int ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _cert, _private_key, NULL, NULL);
+//     _lastError = ret;
+//     if (ret < 0) {
+//         log_e("start_ssl_client: %d", ret);
+//         stop();
+//         _connected = false;
+//         return 0;
+//     }
+//     log_i("SSL connection established");
+//     _connected = true;
+//     return 1;
+// }
+
 int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, const char *_cert, const char *_private_key)
 {
     log_d("Connecting to %s:%d", host, port);
@@ -110,12 +129,15 @@ int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, co
         log_e("start_ssl_client: %d", ret);
         stop();
         _connected = false;
-        return 0;
+        // return the error code instead of just 0
+        return ret;
     }
     log_i("SSL connection established");
     _connected = true;
-    return 1;
+    // consider returning a non-negative code indicating success
+    return 0;
 }
+
 
 int SSLClient::connect(IPAddress ip, uint16_t port, const char *pskIdent, const char *psKey) {
     return connect(ip.toString().c_str(), port,_pskIdent, _psKey);
