@@ -59,14 +59,19 @@ SSLClient::~SSLClient()
     delete sslclient;
 }
 
-void SSLClient::stop()
-{
-    if (sslclient->client >= 0) {
-        //sslclient->client->stop();
-        _connected = false;
-        _peek = -1;
+void SSLClient::stop() {
+    if (sslclient->client != nullptr) {
+        if (sslclient->client >= 0) {
+            log_v("Stopping ssl client");
+            stop_ssl_socket(sslclient, _CA_cert, _cert, _private_key);
+        } else {
+            log_v("stop() not called because client is < 0");
+        }
+    } else {
+        log_v("stop() not called because client is nullptr");
     }
-    stop_ssl_socket(sslclient, _CA_cert, _cert, _private_key);
+     _connected = false;
+    _peek = -1;
 }
 
 int SSLClient::connect(IPAddress ip, uint16_t port)
@@ -98,42 +103,13 @@ int SSLClient::connect(IPAddress ip, uint16_t port, const char *_CA_cert, const 
     return connect(ip.toString().c_str(), port, _CA_cert, _cert, _private_key);
 }
 
-// int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, const char *_cert, const char *_private_key)
-// {
-//     log_d("Connecting to %s:%d", host, port);
-//     if(_timeout > 0){
-//         sslclient->handshake_timeout = _timeout;
-//     }
-//     int ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _cert, _private_key, NULL, NULL);
-//     _lastError = ret;
-//     if (ret < 0) {
-//         log_e("start_ssl_client: %d", ret);
-//         stop();
-//         _connected = false;
-//         return 0;
-//     }
-//     log_i("SSL connection established");
-//     _connected = true;
-//     return 1;
-// }
-
 int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, const char *_cert, const char *_private_key)
 {
     log_d("Connecting to %s:%d", host, port);
     if(_timeout > 0){
         sslclient->handshake_timeout = _timeout;
     }
-    
-    int ret = -1;
-    try {
-        ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _cert, _private_key, NULL, NULL);
-    } catch (...) {
-        log_e("Exception occurred in start_ssl_client");
-        stop();
-        _connected = false;
-        return -2;
-    }
-
+    int ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _cert, _private_key, NULL, NULL);
     _lastError = ret;
     if (ret < 0) {
         log_e("start_ssl_client: %d", ret);
@@ -145,7 +121,6 @@ int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, co
     _connected = true;
     return 1;
 }
-
 
 int SSLClient::connect(IPAddress ip, uint16_t port, const char *pskIdent, const char *psKey) {
     return connect(ip.toString().c_str(), port,_pskIdent, _psKey);
