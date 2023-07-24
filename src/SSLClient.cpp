@@ -59,14 +59,19 @@ SSLClient::~SSLClient()
     delete sslclient;
 }
 
-void SSLClient::stop()
-{
-    if (sslclient->client >= 0) {
-        //sslclient->client->stop();
-        _connected = false;
-        _peek = -1;
+void SSLClient::stop() {
+    if (sslclient->client != nullptr) {
+        if (sslclient->client >= 0) {
+            log_v("Stopping ssl client");
+            stop_ssl_socket(sslclient, _CA_cert, _cert, _private_key);
+        } else {
+            log_v("stop() not called because client is < 0");
+        }
+    } else {
+        log_v("stop() not called because client is nullptr");
     }
-    stop_ssl_socket(sslclient, _CA_cert, _cert, _private_key);
+     _connected = false;
+    _peek = -1;
 }
 
 int SSLClient::connect(IPAddress ip, uint16_t port)
