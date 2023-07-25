@@ -1,3 +1,7 @@
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient)  
+
+### Now updated on PlatformIO registry as digitaldragon/SSLClient@1.1.0
+
 # SSLClient Arduino library using *mbedtls* functions
 The SSLClient class implements support for secure connections using TLS (SSL). It Provides a transparent SSL wrapper over existing transport object of a **Client** class.
 Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure) for Arduino/ESP32.

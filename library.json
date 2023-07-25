@@ -10,5 +10,16 @@
   "keywords": "SSL,TLS,GSM,Arduino,Client,TinyGsmClient,mbedtls",
   "license": "GPL-3.0-or-later",
   "frameworks": "arduino",
-  "platforms": "esp32"
+  "platforms": "esp32",
+  "authors":
+  [
+    {
+      "name": "V Govorovski",
+      "maintainer": true
+    },
+    {
+      "name": "Robert Byrnes",
+      "maintainer": true
+    }
+  ]
 }
