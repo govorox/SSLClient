@@ -1,6 +1,10 @@
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient)  
 
-### Now updated on PlatformIO registry as digitaldragon/SSLClient@1.1.0
+<!-- [![arduino-library-badge](https://www.ardu-badge.com/badge/digitaldragon/library/SSLClient.svg?)](https://www.ardu-badge.com/digitaldragon/library/SSLClient.svg) -->
+
+
+### Now updated on PlatformIO registry as digitaldragon/SSLClient@1.1.1
+### Updated on Arduino Libraries regsitry to digitaldragon/SSLClient@1.1.1
 
 # SSLClient Arduino library using *mbedtls* functions
 The SSLClient class implements support for secure connections using TLS (SSL). It Provides a transparent SSL wrapper over existing transport object of a **Client** class.
