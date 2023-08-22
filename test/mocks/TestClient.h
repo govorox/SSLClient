@@ -2,7 +2,7 @@
 #define TESTCLIENT_H
 
 #include "Client.h"
-#include "emulator.h"
+#include "Emulator.h"
 
 class TestClient : public Client, public Emulator {
 public:
