@@ -104,7 +104,6 @@ int client_net_recv_timeout( void *ctx, unsigned char *buf,
     return result;
 }
 
-
 /**
  * \brief          Write at most 'len' characters. If no error occurs,
  *                 the actual amount read is returned.
@@ -118,27 +117,51 @@ int client_net_recv_timeout( void *ctx, unsigned char *buf,
  *                 MBEDTLS_ERR_SSL_WANT_WRITE indicates write() would block.
  */
 static int client_net_send( void *ctx, const unsigned char *buf, size_t len ) {
+    const int bufferSize = 1024;
     Client *client = (Client*)ctx;
     if (!client) { 
         log_e("Uninitialised!");
         return -1;
     }
     
-    //if (!client->connected()) {
+    // if (!client->connected()) {
     //    log_e("Not connected!");
     //    return -2;
-    //}
+    // }
     
-    //esp_log_buffer_hexdump_internal("SSL.WR", buf, (uint16_t)len, ESP_LOG_VERBOSE);
+    // esp_log_buffer_hexdump_internal("SSL.WR", buf, (uint16_t)len, ESP_LOG_VERBOSE);
     
-    int result = client->write(buf, len);
-    if (result == 0) {
-        log_e("write failed");
-        result= MBEDTLS_ERR_NET_SEND_FAILED;
+    int totalBytesSent = 0;
+    int result;
+
+    for (int i = 0; i < len; i += bufferSize) {
+        int chunk;
+
+        if (bufferSize > len -i) {
+            chunk = len - i;
+        } else {
+            chunk = bufferSize;
+        }
+
+        // Create a new buffer for each chunk, otherwise the SSL library will
+        unsigned char wbuf[chunk];
+        memcpy(wbuf, &buf[i], chunk);
+
+        // Send the buffer to the client
+        result = client->write(wbuf, chunk);
+        if (result <= 0) {
+            log_e("write failed");
+            if (result == 0) {
+                result = MBEDTLS_ERR_NET_SEND_FAILED;
+            }
+            return result; // return the error code immediately on failure
+        } else {
+            totalBytesSent += result;
+        }
     }
     
-    log_d("SSL client TX res=%d len=%d", result, len);
-    return result;
+    log_d("SSL client TX res=%d len=%d", totalBytesSent, len);
+    return totalBytesSent;
 }
 
 
@@ -304,7 +327,8 @@ int start_ssl_client(sslclient_context *ssl_client, const char *host, uint32_t p
     log_v("Verifying peer X.509 certificate...");
 
     if ((flags = mbedtls_ssl_get_verify_result(&ssl_client->ssl_ctx)) != 0) {
-        bzero(buf, sizeof(buf));
+        // bzero(buf, sizeof(buf));
+        memset(buf, 0, sizeof(buf));
         mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
         log_e("Failed to verify peer certificate! verification info: %s", buf);
         stop_ssl_socket(ssl_client, rootCABuff, cli_cert, cli_key);  //It's not safe continue.
