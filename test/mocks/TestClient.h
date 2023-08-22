@@ -56,7 +56,7 @@ public:
 
     uint8_t connected() override {
         // Dummy implementation
-        return 1; // Assume always connected
+        return this->mock<uint8_t>("connected");
     }
 
     operator bool() override {

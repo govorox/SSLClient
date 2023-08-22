@@ -19,6 +19,7 @@ TestClient testClient;
 void setUp(void) {
     ArduinoFakeReset();
     testClient.reset();
+    testClient.returns("connected", (uint8_t)1); // Mock the client to return true for "connected" function
 }
 
 void tearDown(void) {}
@@ -93,8 +94,8 @@ void test_partial_write(void) {
 void test_disconnected_client(void) {
     // Arrange
     unsigned char buf[1000];
-    // Mock the client to return false for "connected" function
-    testClient.returns("connected", (uint8_t)0);
+    testClient.reset(); // Reset the mock client
+    testClient.returns("connected", (uint8_t)0); // Mock the client to return false for "connected" function
 
     // Act
     int result = client_net_send(&testClient, buf, sizeof(buf));
@@ -111,7 +112,7 @@ void run_all_tests(void) {
     RUN_TEST(test_zero_length_buffer);
     RUN_TEST(test_single_chunk_exact);
     RUN_TEST(test_partial_write);
-    // RUN_TEST(test_disconnected_client);
+    RUN_TEST(test_disconnected_client);
     UNITY_END();
 }
 

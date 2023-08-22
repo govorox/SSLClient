@@ -124,10 +124,10 @@ static int client_net_send( void *ctx, const unsigned char *buf, size_t len ) {
         return -1;
     }
     
-    // if (!client->connected()) {
-    //    log_e("Not connected!");
-    //    return -2;
-    // }
+    if (!client->connected()) {
+       log_e("Not connected!");
+       return -2;
+    }
     
     // esp_log_buffer_hexdump_internal("SSL.WR", buf, (uint16_t)len, ESP_LOG_VERBOSE);
     
