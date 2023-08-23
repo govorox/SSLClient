@@ -66,7 +66,7 @@ static int client_net_recv( void *ctx, unsigned char *buf, size_t len ) {
    // }
 
     int result = client->read(buf, len);
-    log_d("SSL client RX res=%d len=%d", result, len);
+    log_vv("SSL client RX res=%d len=%d", result, len);
 
     if (result > 0) {
         //esp_log_buffer_hexdump_internal("SSL.RD", buf, (uint16_t)result, ESP_LOG_VERBOSE);
@@ -95,7 +95,7 @@ int client_net_recv_timeout( void *ctx, unsigned char *buf,
     
     if (!result) return MBEDTLS_ERR_SSL_WANT_READ;
 
-    log_d("SSL client RX (received=%d expected=%d in %dms)", result, len, millis()-start);
+    log_vv("SSL client RX (received=%d expected=%d in %dms)", result, len, millis()-start);
 
     if (result > 0) {
         //esp_log_buffer_hexdump_internal("SSL.RD", buf, (uint16_t)result, ESP_LOG_VERBOSE);
@@ -160,7 +160,7 @@ static int client_net_send( void *ctx, const unsigned char *buf, size_t len ) {
         }
     }
     
-    log_d("SSL client TX res=%d len=%d", totalBytesSent, len);
+    log_vv("SSL client TX res=%d len=%d", totalBytesSent, len);
     return totalBytesSent;
 }
 
@@ -398,7 +398,7 @@ int data_to_read(sslclient_context *ssl_client)
 
 int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len)
 {
-    log_d("Writing SSL (%d bytes)...", len);  //for low level debug
+    log_vv("Writing SSL (%d bytes)...", len);  //for low level debug
     int ret = -1;
 
     while ((ret = mbedtls_ssl_write(&ssl_client->ssl_ctx, data, len)) <= 0) {
@@ -408,19 +408,19 @@ int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len
     }
 
     len = ret;
-    log_v("%d bytes written", len);  //for low level debug
+    log_vv("%d bytes written", len);  //for low level debug
     return ret;
 }
 
 
 int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, int length)
 {
-    log_d( "Reading SSL (%d bytes)", length);   //for low level debug
+    log_vv("Reading SSL (%d bytes)", length);   //for low level debug
     int ret = -1;
 
     ret = mbedtls_ssl_read(&ssl_client->ssl_ctx, data, length);
 
-    log_v( "%d bytes read", ret);   //for low level debug
+    log_vv("%d bytes read", ret);   //for low level debug
     return ret;
 }
 

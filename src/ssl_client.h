@@ -15,6 +15,15 @@
 
 #include <Client.h>
 
+/** Enable if you wish to view incoming and outgoing TLS traffic - 
+* this will cause a lot of log output to be generated!
+*/
+#if defined(SSL_LOG_VV)
+    #define log_vv(format, ...) log_printf(ARDUHAL_LOG_FORMAT(V, format), ##__VA_ARGS__)
+#else
+    #define log_vv(format, ...) do {} while(0)
+#endif
+
 typedef struct sslclient_context {
     Client* client;
 
