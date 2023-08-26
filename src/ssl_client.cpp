@@ -149,12 +149,29 @@ static int client_net_send( void *ctx, const unsigned char *buf, size_t len ) {
     return -2;
   }
   
-  // esp_log_buffer_hexdump_internal("SSL.WR", buf, (uint16_t)len, ESP_LOG_VERBOSE);
-  
-  int result = client->write(buf, len);
-  if (result == 0) {
-    log_e("write failed");
-    result= MBEDTLS_ERR_NET_SEND_FAILED;
+  // esp_log_buffer_hexdump_internal("SSL.WR", buf, (uint16_t)len, ESP_LOG_VERBOSE);BEDTLS_ERR_NET_SEND_FAILED;
+
+  int result = 0;
+  for (int i = 0; i < len; i += SSL_CLIENT_SEND_BUFFER_SIZE) {
+    int bytesToWrite;
+
+    if (SSL_CLIENT_SEND_BUFFER_SIZE > len - i) {
+      bytesToWrite = len - i;
+    } else {
+      bytesToWrite = SSL_CLIENT_SEND_BUFFER_SIZE;
+    }
+
+    // Create a new buffer for each chunk
+    unsigned char buffer[bytesToWrite];
+    memcpy(buffer, &buf[i], bytesToWrite);
+
+    // Send the buffer to the client
+    result += client->write(buffer, bytesToWrite);
+    if (result == 0) {
+      log_e("write failed");
+      result = MBEDTLS_ERR_NET_SEND_FAILED;
+      break;
+    }
   }
   
   log_d("SSL client TX res=%d len=%zu", result, len);

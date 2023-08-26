@@ -5,7 +5,7 @@
 
 class ESPClass {
 public:
-    inline int getFreeHeap() { return 1000; }
+  inline int getFreeHeap() { return 1000; }
 };
 
 ESPClass ESP;

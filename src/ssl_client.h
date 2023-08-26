@@ -20,23 +20,24 @@
 #define SSL_CLIENT_DEFAULT_HANDSHAKE_TIMEOUT 15000U
 #define SSL_CLIENT_SLOW_NETWORK_HANDSHAKE_TIMEOUT 30000U
 #define SSL_CLIENT_UNRELIABLE_NETWORK_HANDSHAKE_TIMEOUT 45000U
+#define SSL_CLIENT_SEND_BUFFER_SIZE 1024U
 
 using namespace std;
 
 typedef struct sslclient_context {
-    Client* client;
+  Client* client;
 
-    mbedtls_ssl_context ssl_ctx;
-    mbedtls_ssl_config ssl_conf;
+  mbedtls_ssl_context ssl_ctx;
+  mbedtls_ssl_config ssl_conf;
 
-    mbedtls_ctr_drbg_context drbg_ctx;
-    mbedtls_entropy_context entropy_ctx;
+  mbedtls_ctr_drbg_context drbg_ctx;
+  mbedtls_entropy_context entropy_ctx;
 
-    mbedtls_x509_crt ca_cert;
-    mbedtls_x509_crt client_cert;
-    mbedtls_pk_context client_key;
+  mbedtls_x509_crt ca_cert;
+  mbedtls_x509_crt client_cert;
+  mbedtls_pk_context client_key;
 
-    unsigned long handshake_timeout;
+  unsigned long handshake_timeout;
 } sslclient_context;
 
 static int configure_default_ssl(sslclient_context *ssl_client);
