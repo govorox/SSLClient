@@ -1,2 +1,4 @@
 .pio
+lib/*
+test.log
 .vscode
