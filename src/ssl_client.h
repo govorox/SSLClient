@@ -10,6 +10,8 @@
 #include "MbedTLS.h"
 #else
 #include <mbedtls/platform.h>
+#include <mbedtls/sha256.h>
+#include <mbedtls/oid.h>
 #include <mbedtls/net.h>
 #include <mbedtls/debug.h>
 #include <mbedtls/ssl.h>
