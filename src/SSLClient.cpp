@@ -371,3 +371,8 @@ void SSLClient::setHandshakeTimeout(unsigned long handshake_timeout)
 void SSLClient::setClient(Client* client){
     sslclient->client = client;
 }
+
+void SSLClient::setTimeout(uint32_t milliseconds){ 
+  _timeout = milliseconds; 
+}
+
