@@ -75,9 +75,7 @@ public:
   bool verify(const char* fingerprint, const char* domain_name);
   void setHandshakeTimeout(unsigned long handshake_timeout);
   void setClient(Client* client);
-  void setTimeout(uint32_t milliseconds){ 
-    _timeout = milliseconds; 
-  }
+  void setTimeout(int milliseconds);
 
   operator bool() {
     return connected();
