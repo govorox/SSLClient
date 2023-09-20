@@ -20,14 +20,21 @@ void setUp(void) {
   ArduinoFakeReset();
   testClient.reset();
   testClient.returns("connected", (uint8_t)1); // Mock the client to return true for "connected" function
+  mbedtls_mock_reset_return_values();
 }
 
 void tearDown(void) {}
 
+/* Test client_net_send function */
+
 void test_client_null_context(void) {
+  // Arrange
   unsigned char buf[100];
+  
+  // Act
   int result = client_net_send(NULL, buf, sizeof(buf));
   
+  // Assert
   TEST_ASSERT_EQUAL_INT(-1, result);
 } 
     
@@ -104,7 +111,7 @@ void test_disconnected_client(void) {
   TEST_ASSERT_EQUAL_INT(-2, result); // -2 indicates disconnected client
 }
 
-void run_all_tests(void) {
+void run_client_net_send_tests(void) {
   UNITY_BEGIN();
   RUN_TEST(test_client_null_context);
   RUN_TEST(test_client_write_succeeds);
@@ -115,6 +122,8 @@ void run_all_tests(void) {
   RUN_TEST(test_disconnected_client);
   UNITY_END();
 }
+
+/* End of test functions */
 
 #ifdef ARDUINO
 
@@ -132,7 +141,7 @@ void loop() {
 #else
 
 int main(int argc, char **argv) {
-  run_all_tests();
+  run_client_net_send_tests();
   return 0;
 }
 
