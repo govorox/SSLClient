@@ -99,6 +99,7 @@ void mbedtls_pk_init(mbedtls_pk_context *ctx) {}
 void mbedtls_x509_crt_free(mbedtls_x509_crt *crt) {}
 void mbedtls_ssl_conf_rng(mbedtls_ssl_config *conf, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng) {}
 void mbedtls_ssl_set_bio( mbedtls_ssl_context *ssl, void *p_bio, mbedtls_ssl_send_t *f_send, mbedtls_ssl_recv_t *f_recv, mbedtls_ssl_recv_timeout_t *f_recv_timeout) {}
+void mbedtls_ssl_conf_read_timeout(mbedtls_ssl_config *conf, uint32_t timeout) {}
 void mbedtls_pk_free(mbedtls_pk_context *ctx) {}
 void mbedtls_ssl_free(mbedtls_ssl_context *ssl) {}
 void mbedtls_ssl_config_free(mbedtls_ssl_config *conf) {}
