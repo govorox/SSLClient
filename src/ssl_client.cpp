@@ -96,8 +96,8 @@ static int client_net_recv( void *ctx, unsigned char *buf, size_t len ) {
 int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t timeout) {
   Client *client = (Client*)ctx;
 
-  log_v("Timeout set to %d", timeout);
-  
+  log_v("Timeout set to %u", timeout);
+
   if (!client) { 
     log_e("Uninitialised!");
     return -1;

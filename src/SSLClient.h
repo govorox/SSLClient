@@ -29,7 +29,7 @@ protected:
 
   int _lastError = 0;
 	int _peek = -1;
-  int _timeout = 0;
+  uint32_t _timeout = 0;
   const char *_CA_cert;
   const char *_cert;
   const char *_private_key;
@@ -75,7 +75,7 @@ public:
   bool verify(const char* fingerprint, const char* domain_name);
   void setHandshakeTimeout(unsigned long handshake_timeout);
   void setClient(Client* client);
-  void setTimeout(int milliseconds);
+  void setTimeout(uint32_t milliseconds);
 
   operator bool() {
     return connected();

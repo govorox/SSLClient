@@ -372,7 +372,7 @@ void SSLClient::setClient(Client* client){
     sslclient->client = client;
 }
 
-void SSLClient::setTimeout(int milliseconds){ 
+void SSLClient::setTimeout(uint32_t milliseconds){ 
   _timeout = milliseconds; 
 }
 
