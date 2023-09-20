@@ -6,13 +6,19 @@
 #ifndef ARD_SSL_H
 #define ARD_SSL_H
 
-#include "mbedtls/platform.h"
-#include "mbedtls/net.h"
-#include "mbedtls/debug.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/error.h"
+#ifdef SSL_CLIENT_TEST_ENVIRONMENT
+#include "MbedTLS.h"
+#else
+#include <mbedtls/platform.h>
+#include <mbedtls/net.h>
+#include <mbedtls/debug.h>
+#include <mbedtls/ssl.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/error.h>
+#include <mbedtls/sha256.h>
+#include <mbedtls/oid.h>
+#endif
 
 #include <Client.h>
 
