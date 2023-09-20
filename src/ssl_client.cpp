@@ -334,6 +334,9 @@ int start_ssl_client(sslclient_context *ssl_client, const char *host, uint32_t p
   log_v("Setting up IO callbacks...");
   mbedtls_ssl_set_bio(&ssl_client->ssl_ctx, ssl_client->client,
                       client_net_send, NULL, client_net_recv_timeout );
+  
+  log_v("Setting timeout...");
+  mbedtls_ssl_conf_read_timeout(&ssl_client->ssl_conf,  timeout);
 
   log_v("Performing the SSL/TLS handshake...");
   unsigned long handshake_start_time=millis();
