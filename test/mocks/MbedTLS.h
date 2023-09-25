@@ -5,19 +5,23 @@
 
 // #define MBEDTLS_ERROR_C
 #define MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
-#define MBEDTLS_ERR_SSL_WANT_READ               -0x6900
-#define MBEDTLS_ERR_NET_SEND_FAILED             -0x004E
-#define MBEDTLS_SSL_IS_CLIENT                   0
-#define MBEDTLS_SSL_TRANSPORT_STREAM            0
-#define MBEDTLS_SSL_PRESET_DEFAULT              0
-#define MBEDTLS_SSL_VERIFY_REQUIRED             2
-#define MBEDTLS_PSK_MAX_LEN                     32
-#define MBEDTLS_SSL_VERIFY_NONE                 0
-#define MBEDTLS_ERR_SSL_WANT_WRITE              -0x6880
-#define MBEDTLS_OID_ISO_CCITT_DS                "\x55"
-#define MBEDTLS_OID_AT                          MBEDTLS_OID_ISO_CCITT_DS "\x04"
-#define MBEDTLS_OID_AT_CN                       MBEDTLS_OID_AT "\x03"
-#define MBEDTLS_OID_CMP(oid_str, oid_buf)       (strncmp((oid_str), (char*)(oid_buf)->p, (oid_buf)->len) == 0)
+#define MBEDTLS_ERR_SSL_WANT_READ                   -0x6900
+#define MBEDTLS_ERR_NET_SEND_FAILED                 -0x004E
+#define MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED  -0x0034
+#define MBEDTLS_ERR_SSL_ALLOC_FAILED                -0x7F00
+#define MBEDTLS_ERR_SSL_BAD_INPUT_DATA              -0x7100
+#define MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE         -0x7080
+#define MBEDTLS_ERR_SSL_WANT_WRITE                  -0x6880
+#define MBEDTLS_SSL_IS_CLIENT                       0
+#define MBEDTLS_SSL_TRANSPORT_STREAM                0
+#define MBEDTLS_SSL_PRESET_DEFAULT                  0
+#define MBEDTLS_SSL_VERIFY_REQUIRED                 2
+#define MBEDTLS_PSK_MAX_LEN                         32
+#define MBEDTLS_SSL_VERIFY_NONE                     0
+#define MBEDTLS_OID_ISO_CCITT_DS                    "\x55"
+#define MBEDTLS_OID_AT                              MBEDTLS_OID_ISO_CCITT_DS "\x04"
+#define MBEDTLS_OID_AT_CN                           MBEDTLS_OID_AT "\x03"
+#define MBEDTLS_OID_CMP(oid_str, oid_buf)           (strncmp((oid_str), (char*)(oid_buf)->p, (oid_buf)->len) == 0)
 
 typedef struct mbedtls_asn1_buf {
   int tag;
