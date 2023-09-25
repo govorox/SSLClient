@@ -415,7 +415,7 @@ int SSLClient::read(uint8_t *buf, size_t size) {
     peeked = 1; // set peeked to 1 to indicate one byte has been read from the peeked value.
   }
 
-  int res = get_ssl_receive(sslclient, buf, size);
+  size_t res = get_ssl_receive(sslclient, buf, size);
 
   if (res < 0) {
     stop();

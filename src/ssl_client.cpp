@@ -149,7 +149,7 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
  * \return int    -1 if Client* is nullptr.
  * \return int    -2 if connect failed.
  */
-static int client_net_send( void *ctx, const unsigned char *buf, size_t len ) {
+static int client_net_send(void *ctx, const unsigned char *buf, size_t len) {
   Client *client = (Client*)ctx;
   if (!client) { 
     log_e("Uninitialised!");
@@ -585,9 +585,9 @@ int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len
  * \param ssl_client      sslclient_context* - The ssl client context. 
  * \param data            uint8_t* - The data to receive. 
  * \param length          int - The length of the data. 
- * \return int            The number of bytes received. 
+ * \return size_t            The number of bytes received. 
  */
-int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, int length) {
+int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, size_t length) {
   log_v( "Reading SSL (%d bytes)", length);   //for low level debug
   int ret = -1;
 
