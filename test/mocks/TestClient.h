@@ -31,7 +31,7 @@ public:
   }
 
   int read(uint8_t *buf, size_t size) override {
-    return 0; // No bytes read
+    return this->mock<int>("read");
   }
 
   int peek() override {

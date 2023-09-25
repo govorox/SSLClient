@@ -6,13 +6,21 @@
 #ifndef ARD_SSL_H
 #define ARD_SSL_H
 
-#include "mbedtls/platform.h"
-#include "mbedtls/net.h"
-#include "mbedtls/debug.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/error.h"
+#ifdef SSL_CLIENT_TEST_ENVIRONMENT
+#include "MbedTLS.h"
+#else
+#include <mbedtls/platform.h>
+#include <mbedtls/sha256.h>
+#include <mbedtls/oid.h>
+#include <mbedtls/net.h>
+#include <mbedtls/debug.h>
+#include <mbedtls/ssl.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/error.h>
+#include <mbedtls/sha256.h>
+#include <mbedtls/oid.h>
+#endif
 
 #include <Client.h>
 
@@ -45,7 +53,7 @@ int start_ssl_client(sslclient_context *ssl_client, const char *host, uint32_t p
 void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key);
 int data_to_read(sslclient_context *ssl_client);
 int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len);
-int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, int length);
+int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, size_t length);
 bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const char* domain_name);
 bool verify_ssl_dn(sslclient_context *ssl_client, const char* domain_name);
 

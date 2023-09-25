@@ -7,3 +7,4 @@ SSL Client Updates:
 5. Fix buffer issue when writing data larger than receiving buffer, Commit: 4ce6c5f
 6. Fix issue where client read timeout value not being set, Commit: 59ae9f0
 7. Add clarity to return values for start_ssl_client and fix early termination of ssl client, Commit: cc40266
+8. Close issue [#30](https://github.com/govorox/SSLClient/issues/30), Commit: e426936
