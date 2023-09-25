@@ -5,3 +5,5 @@ SSL Client Updates:
 3. ssl_client.cpp: Fix parameter name in _handle_error - commit : 39155e7
 4. Fix memory leaks when SSL/TLS connection fails, Commit : f29f448
 5. Fix buffer issue when writing data larger than receiving buffer, Commit: 4ce6c5f
+6. Fix issue where client read timeout value not being set, Commit: 59ae9f0
+7. Add clarity to return values for start_ssl_client and fix early termination of ssl client, Commit: cc40266
