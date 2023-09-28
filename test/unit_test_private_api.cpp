@@ -1,13 +1,11 @@
-#define log_d(...); printf(__VA_ARGS__); printf("\n");
-#define log_i(...); printf(__VA_ARGS__); printf("\n");
-#define log_w(...); printf(__VA_ARGS__); printf("\n");
-#define log_e(...); printf(__VA_ARGS__); printf("\n");
-#define log_v(...); printf(__VA_ARGS__); printf("\n");
+#include "unity.h"
+#include "Arduino.h"
+#include "Emulation.h"
+#define EMULATOR_LOG
+
 #define portTICK_PERIOD_MS 1
 #define vTaskDelay(x) delay(x)
 
-#include "unity.h"
-#include "Arduino.h"
 #include "mocks/ESPClass.hpp"
 #include "mocks/TestClient.h"
 #include "ssl_client.cpp"
@@ -19,6 +17,7 @@ sslclient_context *testContext;
 
 void setUp(void) {
   ArduinoFakeReset();
+  ResetEmulators();
   testClient.reset();
   testClient.returns("connected", (uint8_t)1);
   mbedtls_mock_reset_return_values();
@@ -246,6 +245,150 @@ void run_client_net_recv_tests(void) {
   UNITY_END();
 }
 
+/* Test handle_error function */
+
+void test_handle_error_no_logging_on_minus_30848(void) {
+  // Arrange
+  int err = -30848;
+
+  // Act
+  int result = _handle_error(err, "testFunction", 123);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(-30848, result);
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+}
+
+void test_handle_error_logging_with_mbedtls_error_c(void) {
+  // Arrange
+  int err = MBEDTLS_ERR_NET_SEND_FAILED;
+
+  // Act
+  int result = _handle_error(err, "testFunction", 123);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(-0x004E, result);
+  TEST_ASSERT_TRUE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_e_stub.timesCalled());
+}
+
+void test_handle_error_logging_without_mbedtls_error_c(void) {
+  // Arrange
+  int err = MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE; // Some error code not being specially handled
+
+  // Act
+  int result = _handle_error(err, "testFunction", 123);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(err, result);
+  TEST_ASSERT_TRUE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_e_stub.timesCalled());
+}
+
+void run_handle_error_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_handle_error_no_logging_on_minus_30848);
+  RUN_TEST(test_handle_error_logging_with_mbedtls_error_c);
+  RUN_TEST(test_handle_error_logging_without_mbedtls_error_c);
+  UNITY_END();
+}
+
+/* Test client_net_recv_timeout function */
+
+void test_ctx_is_null(void) {
+  // Arrange
+  unsigned char buf[10];
+  
+  // Act
+  int result = client_net_recv_timeout(nullptr, buf, 10, 1000);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_e_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+void test_successful_read_without_delay(void) {
+  // Arrange
+  testClient.returns("available", (int)10);
+  testClient.returns("read", (int)10);
+  unsigned char buf[10];
+
+  // Act
+  int result = client_net_recv_timeout(&testClient, buf, 10, 1000);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(2, log_v_stub.timesCalled());
+  TEST_ASSERT_GREATER_THAN(0, result);
+}
+
+void test_successful_read_with_delay(void) {
+  // Arrange
+  testClient.returns("available", (int)10);
+  testClient.returns("read", (int)10);
+  unsigned char buf[10];
+
+  // Act
+  int result = client_net_recv_timeout(&testClient, buf, 10, 1000);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(2, log_v_stub.timesCalled());
+  TEST_ASSERT_GREATER_THAN(0, result);
+}
+
+void test_read_timeout(void) {
+  // Arrange
+  testClient.reset();
+  testClient.returns("available", (int)0);
+  testClient.returns("read", (int)0);
+  unsigned char buf[10];
+
+  // Act
+  int result = client_net_recv_timeout(&testClient, buf, 10, 100);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL(MBEDTLS_ERR_SSL_WANT_READ, result);
+}
+
+void test_read_returns_zero(void) {
+  // Arrange
+  testClient.returns("available", (int)10);
+  testClient.returns("read", (int)0);
+  unsigned char buf[10];
+
+  // Act
+  int result = client_net_recv_timeout(&testClient, buf, 10, 1000);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL(MBEDTLS_ERR_SSL_WANT_READ, result);
+}
+
+void test_len_zero(void) {
+  // Arrange
+  unsigned char buf[10];
+
+  // Act
+  int result = client_net_recv_timeout(&testClient, buf, 0, 1000);
+  
+  // Assert
+  TEST_ASSERT_TRUE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void run_client_net_recv_timeout_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_ctx_is_null);
+  RUN_TEST(test_successful_read_without_delay);
+  RUN_TEST(test_successful_read_with_delay);
+  RUN_TEST(test_read_timeout);
+  RUN_TEST(test_read_returns_zero);
+  // RUN_TEST(test_len_zero);
+  UNITY_END();
+}
+
+
 /* End of test functions */
 
 #ifdef ARDUINO
@@ -267,6 +410,8 @@ int main(int argc, char **argv) {
   run_client_net_send_tests();
   run_get_ssl_receive_tests();
   run_client_net_recv_tests();
+  run_handle_error_tests();
+  run_client_net_recv_timeout_tests();
   return 0;
 }
 

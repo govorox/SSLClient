@@ -7,15 +7,15 @@
 class TestClient : public Client, public Emulator {
 public:
   int connect(IPAddress ip, uint16_t port) override {
-    return 1; // 1 means successful connection, you can change based on test requirements.
+    return this->mock<int>("connect");
   }
 
   int connect(const char *host, uint16_t port) override {
-    return 1;
+    return this->mock<int>("connect");
   }
 
   size_t write(uint8_t byte) override {
-    return 1; // 1 byte written
+    return this->mock<size_t>("write");
   }
 
   size_t write(const uint8_t *buf, size_t size) override {
@@ -23,11 +23,11 @@ public:
   }
 
   int available() override {
-    return 0; // No bytes available
+    return this->mock<int>("available");
   }
 
   int read() override {
-    return -1; // -1 generally indicates no bytes available
+    return this->mock<int>("read");
   }
 
   int read(uint8_t *buf, size_t size) override {
@@ -35,7 +35,7 @@ public:
   }
 
   int peek() override {
-    return -1; // -1 generally indicates no bytes available
+    return this->mock<int>("peek");
   }
 
   void flush() override {}

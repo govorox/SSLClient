@@ -98,10 +98,16 @@ static int client_net_recv( void *ctx, unsigned char *buf, size_t len ) {
  * \return int      The number of bytes received, or a non-zero error code;
  *                  with a non-blocking socket, MBEDTLS_ERR_SSL_WANT_READ
  *                  indicates read() would block. 
- * \return int    -1 if Client* is nullptr.
- * \return int    -2 if connect failed.
+ * \return int      0 if incorrectly called and len = 0,
+ * \return int      -1 if Client* is nullptr.
+ * \return int      -2 if connect failed.
  */
 int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t timeout) {
+  if (len == 0) {
+    log_e("Zero length specified!");
+    return 0;
+  }
+
   Client *client = (Client*)ctx;
 
   log_v("Timeout set to %u", timeout);
@@ -113,12 +119,12 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
 
   unsigned long start = millis();
   unsigned long tms = start + timeout;
-  
   do {
     int pending = client->available();
     if (pending < len && timeout > 0) {
       delay(1);
     } else break;
+
   } while (millis() < tms);
   
   int result = client->read(buf, len);
