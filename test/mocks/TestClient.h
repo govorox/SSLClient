@@ -3,6 +3,10 @@
 
 #include "Client.h"
 #include "Emulator.h"
+#include "FunctionEmulator.h"
+
+
+FunctionEmulator test_client_stop_stub("TestClient::stop()");
 
 class TestClient : public Client, public Emulator {
 public:
@@ -40,7 +44,9 @@ public:
 
   void flush() override {}
 
-  void stop() override {}
+  void stop() override {
+    test_client_stop_stub.recordFunctionCall();
+  }
 
   uint8_t connected() override {
     return this->mock<uint8_t>("connected");

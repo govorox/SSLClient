@@ -193,6 +193,7 @@ static int client_net_send(void *ctx, const unsigned char *buf, size_t len) {
   }
   
   log_d("SSL client TX res=%d len=%zu", result, len);
+  
   return result;
 }
 
@@ -495,10 +496,12 @@ int start_ssl_client(
  */
 void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key) {
   log_v("Cleaning SSL connection.");
-  log_v("Stopping SSL client. Current client pointer address: %p", (void *)ssl_client->client);
   
   // Stop the client connection
-  ssl_client->client->stop();
+  if (ssl_client && ssl_client->client) {
+    log_v("Stopping SSL client. Current client pointer address: %p", (void *)ssl_client->client);
+    ssl_client->client->stop();
+  }
 
   if (ssl_client->ssl_conf.ca_chain != NULL) {
     log_v("Freeing CA cert. Current ca_cert address: %p", (void *)&ssl_client->ca_cert);
@@ -528,11 +531,7 @@ void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, cons
 
   log_v("Freeing entropy context. Current entropy_ctx address: %p", (void *)&ssl_client->entropy_ctx);
   mbedtls_entropy_free(&ssl_client->entropy_ctx);
-
-  // log_v("Resetting embedded pointers to zero for ssl_client at address: %p", (void *)ssl_client);
-  // memset(ssl_client, 0, sizeof(sslclient_context));
 }
-
 
 /**
  * \brief             Check if there is data to read or not.
@@ -542,10 +541,13 @@ void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, cons
  */
 int data_to_read(sslclient_context *ssl_client) {
   int ret, res;
+  
   ret = mbedtls_ssl_read(&ssl_client->ssl_ctx, NULL, 0);
-  //log_e("RET: %i",ret);   //for low level debug
+  log_d("RET: %i",ret);   // for low level debug
+  
   res = mbedtls_ssl_get_bytes_avail(&ssl_client->ssl_ctx);
-  //log_e("RES: %i",res);    //for low level debug
+  log_d("RES: %i",res);    // for low level debug
+  
   if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret < 0) {
     return handle_error(ret);
   }
@@ -591,7 +593,7 @@ int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len
  * \param ssl_client      sslclient_context* - The ssl client context. 
  * \param data            uint8_t* - The data to receive. 
  * \param length          int - The length of the data. 
- * \return size_t            The number of bytes received. 
+ * \return size_t         The number of bytes received. 
  */
 int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, size_t length) {
   log_v( "Reading SSL (%d bytes)", length);   //for low level debug
@@ -610,7 +612,7 @@ int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, size_t length)
  * \param res       uint8_t* - The data to receive. 
  * \return bool     True if the data was received, false otherwise. 
  */
-static bool parseHexNibble(char pb, uint8_t* res) {
+static bool parse_hex_nibble(char pb, uint8_t* res) {
   if (pb >= '0' && pb <= '9') {
     *res = (uint8_t) (pb - '0'); return true;
   } else if (pb >= 'a' && pb <= 'f') {
@@ -628,14 +630,17 @@ static bool parseHexNibble(char pb, uint8_t* res) {
  * \param domainName    const string& - The domain name. 
  * \return bool         True if the name from certificate and domain name match, false otherwise.  
  */
-static bool matchName(const string& name, const string& domainName) {
-  size_t wildcardPos = name.find('*');
+static bool match_name(const string& name, const string& domainName) {
+  size_t wildcardPos = name.find("*");
+  if (wildcardPos == (size_t)12) {
+    return false; // We don't support wildcards for subdomains
+  }
   if (wildcardPos == string::npos) {
     // Not a wildcard, expect an exact match
     return name == domainName;
   }
 
-  size_t firstDotPos = name.find('.');
+  size_t firstDotPos = name.find(".");
   if (wildcardPos > firstDotPos) {
     // Wildcard is not part of leftmost component of domain name
     // Do not attempt to match (rfc6125 6.4.3.1)
@@ -663,8 +668,7 @@ static bool matchName(const string& name, const string& domainName) {
  * \param domain_name   const char* - The domain name. 
  * \return bool         True if the certificate matches the fingerprint, false otherwise. 
  */
-bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const char* domain_name)
-{
+bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const char* domain_name) {
   // Convert hex string to byte array
   uint8_t fingerprint_local[32];
   int len = strlen(fp);
@@ -673,15 +677,18 @@ bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const
     while (pos < len && ((fp[pos] == ' ') || (fp[pos] == ':'))) {
       ++pos;
     }
+
     if (pos > len - 2) {
       log_v("pos:%d len:%d fingerprint too short", pos, len);
       return false;
     }
+
     uint8_t high, low;
-    if (!parseHexNibble(fp[pos], &high) || !parseHexNibble(fp[pos+1], &low)) {
+    if (!parse_hex_nibble(fp[pos], &high) || !parse_hex_nibble(fp[pos+1], &low)) {
       log_v("pos:%d len:%d invalid hex sequence: %c%c", pos, len, fp[pos], fp[pos+1]);
       return false;
     }
+
     pos += 2;
     fingerprint_local[i] = low | (high << 4);
   }
@@ -738,7 +745,7 @@ bool verify_ssl_dn(sslclient_context *ssl_client, const char* domain_name)
     string san_str((const char*)san->buf.p, san->buf.len);
     transform(san_str.begin(), san_str.end(), san_str.begin(), ::tolower);
 
-    if (matchName(san_str, domain_name_str)) {
+    if (match_name(san_str, domain_name_str)) {
       return true;
     }
 
@@ -755,7 +762,7 @@ bool verify_ssl_dn(sslclient_context *ssl_client, const char* domain_name)
     if (!MBEDTLS_OID_CMP(MBEDTLS_OID_AT_CN, &common_name->oid)) {
       string common_name_str((const char*)common_name->val.p, common_name->val.len);
 
-      if (matchName(common_name_str, domain_name_str)) {
+      if (match_name(common_name_str, domain_name_str)) {
         return true;
       }
 
