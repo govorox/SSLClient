@@ -50,6 +50,11 @@ typedef struct sslclient_context {
 
 void ssl_init(sslclient_context *ssl_client, Client *client);
 int start_ssl_client(sslclient_context *ssl_client, const char *host, uint32_t port, int timeout, const char *rootCABuff, const char *cli_cert, const char *cli_key, const char *pskIdent, const char *psKey);
+int init_tcp_connection(sslclient_context *ssl_client, const char *host, uint32_t port);
+int seed_random_number_generator(sslclient_context *ssl_client);
+int set_up_tls_defaults(sslclient_context *ssl_client);
+int auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized,
+                      const char *pskIdent, const char *psKey, int *func_ret);
 void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key);
 int data_to_read(sslclient_context *ssl_client);
 int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len);

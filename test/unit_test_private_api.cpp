@@ -111,7 +111,6 @@ void test_partial_write(void) {
   // Act
   int result = client_net_send(&testClient, buf, sizeof(buf));
   
-
   // Assert
   TEST_ASSERT_EQUAL_INT(1500, result); // Only half the buffer is sent
 }
@@ -391,10 +390,8 @@ void test_data_to_read_success() {
   
   // Act
   int result = data_to_read(testContext);
-  ArgContext args = log_d_stub.getArguments();
   
   // Assert
-  // TEST_ASSERT_EQUAL_STRING("RET: 5", log_d_Args[0].c_str());
   TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 2);
   TEST_ASSERT_FALSE(log_e_stub.wasCalled());
   TEST_ASSERT_EQUAL(5, result); 
@@ -407,8 +404,6 @@ void test_data_to_read_edge_case() {
   
   // Act
   int result = data_to_read(testContext);
-  ArgContext argsD = log_d_stub.getArguments();
-  ArgContext argsE = log_e_stub.getArguments();
   
   // Assert
   // TEST_ASSERT_EQUAL_STRING("RET: -26880", log_d_Args[0].c_str());
@@ -424,8 +419,6 @@ void test_data_to_read_failure() {
   
   // Act
   int result = data_to_read(testContext);
-  ArgContext argsD = log_d_stub.getArguments();
-  ArgContext argsE = log_e_stub.getArguments();
   
   // Assert
   TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 2);
@@ -440,6 +433,149 @@ void run_data_to_read_tests(void) {
   RUN_TEST(test_data_to_read_failure);
   UNITY_END();
 }
+
+/* test init_tcp_connection function */
+
+void test_init_tcp_connection_SuccessfulConnection_ReturnsZero(void) {
+  // Arrange
+  testContext->client = &testClient;
+  testClient.reset();
+  testClient.returns("connect", (int)1);
+  const char* host = "example.com";
+  uint32_t port = 443;
+
+  // Act
+  int result = init_tcp_connection(testContext, host, port);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_init_tcp_connection_NullClient_ReturnsMinusOne(void) {
+  // Arrange
+  const char* host = "example.com";
+  uint32_t port = 443;
+  testContext->client = nullptr;
+
+  // Act
+  int result = init_tcp_connection(testContext, host, port);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_v_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_e_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+void test_init_tcp_connection_FailedConnection_ReturnsMinusTwo(void) {
+  // Arrange
+  testContext->client = &testClient;
+  testClient.reset();
+  testClient.returns("connect", (int)0);
+  const char* host = "example.com";
+  uint32_t port = 443;
+
+  // Act
+  int result = init_tcp_connection(testContext, host, port);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_e_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(-2, result);
+}
+
+void test_init_tcp_connection_EdgeCase_LargePortNumber_SuccessfulConnection(void) {
+  // Arrange
+  testContext->client = &testClient;
+  testClient.reset();
+  testClient.returns("connect", (int)1);
+  const char* host = "example.com";
+  uint32_t largePort = UINT32_MAX;
+
+  // Act
+  int result = init_tcp_connection(testContext, host, largePort);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void run_init_tcp_connection_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_init_tcp_connection_SuccessfulConnection_ReturnsZero);
+  RUN_TEST(test_init_tcp_connection_NullClient_ReturnsMinusOne);
+  RUN_TEST(test_init_tcp_connection_FailedConnection_ReturnsMinusTwo);
+  RUN_TEST(test_init_tcp_connection_EdgeCase_LargePortNumber_SuccessfulConnection);
+  UNITY_END();
+}
+
+/* test seed_random_number_generator function */
+
+void test_seed_random_number_generator_SuccessfulSeed_ReturnsZero(void) {
+  // Arrange
+  mbedtls_ctr_drbg_seed_stub.returns("mbedtls_ctr_drbg_seed", 0);
+
+  // Act
+  int result = seed_random_number_generator(testContext);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(2, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_seed_random_number_generator_CtrDrbgSeedFails_ReturnsErrorCode(void) {
+  // Arrange
+  mbedtls_ctr_drbg_seed_stub.returns("mbedtls_ctr_drbg_seed", MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED);
+
+  // Act
+  int result = seed_random_number_generator(testContext);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(2, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED, result);
+}
+
+void run_seed_random_number_generator_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_seed_random_number_generator_SuccessfulSeed_ReturnsZero);
+  RUN_TEST(test_seed_random_number_generator_CtrDrbgSeedFails_ReturnsErrorCode);
+  UNITY_END();
+}
+
+/* Test set_up_tls_defaults function */
+
+void test_set_up_tls_defaults_SuccessfulSetup_ReturnsZero(void) {
+  // Arrange
+  mbedtls_ssl_config_defaults_stub.returns("mbedtls_ssl_config_defaults", 0);
+
+  // Act
+  int result = set_up_tls_defaults(testContext);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_set_up_tls_defaults_FailedSetup_ReturnsErrorCode(void) {
+  // Arrange
+  mbedtls_ssl_config_defaults_stub.returns("mbedtls_ssl_config_defaults", -1);
+
+  // Act
+  int result = set_up_tls_defaults(testContext);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+void run_set_up_tls_defaults_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_set_up_tls_defaults_SuccessfulSetup_ReturnsZero);
+  RUN_TEST(test_set_up_tls_defaults_FailedSetup_ReturnsErrorCode);
+  UNITY_END();
+} 
 
 /* test stop_ssl_socket function */
 
@@ -1057,6 +1193,10 @@ int main(int argc, char **argv) {
   run_client_net_recv_timeout_tests();
   run_client_net_send_tests();
   run_ssl_init_tests();
+  // start_ssl_client
+  run_init_tcp_connection_tests();
+  run_seed_random_number_generator_tests();
+  run_set_up_tls_defaults_tests();
   run_stop_ssl_socket_tests();
   run_data_to_read_tests();
   run_send_ssl_data_tests();
