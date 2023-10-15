@@ -55,6 +55,11 @@ int seed_random_number_generator(sslclient_context *ssl_client);
 int set_up_tls_defaults(sslclient_context *ssl_client);
 int auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized,
                       const char *pskIdent, const char *psKey, int *func_ret);
+int auth_client_cert_key(sslclient_context *ssl_client, const char *cli_cert, const char *cli_key, bool *client_cert_initialized, bool *client_key_initialized);
+int set_hostname_for_tls(sslclient_context *ssl_client, const char *host);
+int set_io_callbacks_and_timeout(sslclient_context *ssl_client, int timeout);
+int perform_ssl_handshake(sslclient_context *ssl_client, int *func_ret, const char *cli_cert, const char *cli_key);
+int verify_server_cert(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key);
 void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key);
 int data_to_read(sslclient_context *ssl_client);
 int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len);

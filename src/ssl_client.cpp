@@ -232,7 +232,6 @@ int start_ssl_client(
   bool ca_cert_initialized = false;
   bool client_cert_initialized = false;
   bool client_key_initialized = false;
-  bool breakBothLoops = false;
 
   do {
     // Step 1 - Initiate TCP connection
@@ -261,16 +260,18 @@ int start_ssl_client(
     log_v("SSL auth mode set, ret: %d", ret);
 
     // Step 4 route b - Set up required auth mode cli_cert and cli_key
+    ret = auth_client_cert_key(ssl_client, cli_cert, cli_key, &client_cert_initialized, &client_key_initialized);
+    if (ret != 0) {
+      break;
+    }
+    log_v("SSL client cert and key set, ret: %d", ret);
 
-  // if (cli_cert != NULL && cli_key != NULL) {
-  //   if (step4b_set_auth_mode_cli_cert_key(ssl_client, cli_cert, cli_key) != 0) {
-  //     return -5;
-  //   }
-  // }
-
-  // if (step5_set_hostname_for_tls(ssl_client, host) != 0) {
-  //   return -6;
-  // }
+    // Step 5 - Set the hostname for a TLS session
+    ret = set_hostname_for_tls(ssl_client, host);
+    if (ret != 0) {
+      break;
+    }
+    log_v("SSL hostname set, ret: %d", ret);
 
   // if (step6_set_io_callbacks_and_timeout(ssl_client, timeout) != 0) {
   //   return -7;
@@ -382,35 +383,46 @@ int set_up_tls_defaults(sslclient_context *ssl_client) {
  * require verification. If `pskIdent` and `psKey` are not NULL, it sets up a pre-shared key
  * (PSK) for authentication. If none of the options are provided, it configures SSL/TLS with
  * no verification. The function may modify the value pointed to by `func_ret` to indicate errors.
- * If successful, the function returns 0; otherwise, it returns an error code.
+ * If successful, the function returns 0; otherwise, it returns an error code, -1 for a null context.
  */
 int auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized,
                       const char *pskIdent, const char *psKey, int *func_ret) {
+  if (ssl_client == nullptr) {
+    log_e("Uninitialised context!");
+    return -1;
+  }
+
   int ret = 0;
-  if (rootCABuff != NULL) {
+  if (rootCABuff != nullptr) {
     log_v("Loading CA cert");
     mbedtls_x509_crt_init(&ssl_client->ca_cert);
     mbedtls_ssl_conf_authmode(&ssl_client->ssl_conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     ret = mbedtls_x509_crt_parse(&ssl_client->ca_cert, (const unsigned char *)rootCABuff, strlen(rootCABuff) + 1);
 
     if (ret < 0) {
-      // break; // if ret > 0 n certs failed, ret < 0 pem or x509 error code.
+      // if ret > 0 n certs failed, ret < 0 pem or x509 error code.
       return ret;
     }
 
     mbedtls_ssl_conf_ca_chain(&ssl_client->ssl_conf, &ssl_client->ca_cert, NULL);
     // mbedtls_ssl_conf_verify(&ssl_client->ssl_ctx, my_verify, NULL );
 
-    *ca_cert_initialized = true;
+    if (ca_cert_initialized != nullptr) {
+      *ca_cert_initialized = true;
+    } else {
+      log_e("ca_cert_initialized is null!");
+      return -1;
+    }
     
-  } else if (pskIdent != NULL && psKey != NULL) {
+  } else if (pskIdent != nullptr && psKey != nullptr) {
     log_v("Setting up PSK");
     
     // convert PSK from hex to binary
     if ((strlen(psKey) & 1) != 0 || strlen(psKey) > 2*MBEDTLS_PSK_MAX_LEN) {
       log_e("pre-shared key not valid hex or too long");
-      *func_ret = -3;
-      // break;
+      if (func_ret != nullptr) {
+        *func_ret = -3;
+      }
       return -1;
     }
 
@@ -437,12 +449,278 @@ int auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, boo
                               (const unsigned char *)pskIdent, strlen(pskIdent));
     if (ret != 0) { // MBEDTLS_ERR_SSL_XXX undefined?
       log_e("mbedtls_ssl_conf_psk returned %d", ret);
-      // break;
       return ret;
     }
   } else {
     mbedtls_ssl_conf_authmode(&ssl_client->ssl_conf, MBEDTLS_SSL_VERIFY_NONE);
     log_i("WARNING: Use certificates for a more secure communication!");
+    ret = 0;
+  } 
+  return ret;
+}
+
+/**
+ * \brief Authenticate the client by initializing certificates and keys.
+ * 
+ * This function initializes and loads the client's certificate and private key into
+ * the provided SSL client context. It also provides a status of the initialization
+ * of the certificate and key.
+ *
+ * \param[in,out] ssl_client Pointer to the SSL client context.
+ * \param[in] cli_cert Pointer to the client certificate in string format.
+ * \param[in] cli_key Pointer to the client private key in string format.
+ * \param[out] client_cert_initialized Pointer to a boolean indicating if the client certificate was initialized.
+ * \param[out] client_key_initialized Pointer to a boolean indicating if the client key was initialized.
+ * 
+ * \return 0 if successful, or a non-zero error code indicating a failure during the initialization or parsing.
+ *         Positive error codes indicate number of certs that failed.
+ *         Negative error codes indicate a PEM or x509 error.
+ */
+int auth_client_cert_key(sslclient_context *ssl_client, const char *cli_cert, const char *cli_key, bool *client_cert_initialized, bool *client_key_initialized) {
+  int ret = 0;
+  // Step 4 route b - Set up required auth mode cli_cert and cli_key
+  if (cli_cert != NULL && cli_key != NULL) {
+    mbedtls_x509_crt_init(&ssl_client->client_cert);
+    mbedtls_pk_init(&ssl_client->client_key);
+
+    log_v("Loading CRT cert");
+    ret = mbedtls_x509_crt_parse(&ssl_client->client_cert, (const unsigned char *)cli_cert, strlen(cli_cert) + 1);
+    if (ret != 0) {
+      // if ret > 0 n certs failed, ret < 0 pem or x509 error code.
+      return ret;
+    } else {
+      *client_cert_initialized = true;
+    }
+
+    log_v("Loading private key");
+    ret = mbedtls_pk_parse_key(&ssl_client->client_key, (const unsigned char *)cli_key, strlen(cli_key) + 1, NULL, 0);
+    if (ret != 0) { // PK or PEM non-zero error codes
+      mbedtls_x509_crt_free(&ssl_client->client_cert); // cert+key are free'd in pair
+      return ret;
+    } else {
+      *client_key_initialized = true;
+    }
+
+    ret = mbedtls_ssl_conf_own_cert(&ssl_client->ssl_conf, &ssl_client->client_cert, &ssl_client->client_key);
+  }
+  return ret;
+}
+
+/**
+ * \brief Set the hostname for a TLS session.
+ * 
+ * This function sets the hostname for a TLS session which should match
+ * the Common Name (CN) in the server certificate to ensure the identity
+ * of the remote host. It configures the provided SSL client context 
+ * with the hostname and sets up the SSL context with the necessary 
+ * configurations.
+ * 
+ * \param ssl_client A pointer to the sslclient_context structure 
+ *        representing the SSL client context.
+ * \param host A pointer to a character string representing the hostname.
+ * 
+ * \return int Returns 0 on success. On failure, it returns 
+ *         MBEDTLS_ERR_SSL_ALLOC_FAILED if there's a memory allocation 
+ *         failure, MBEDTLS_ERR_SSL_BAD_INPUT_DATA for bad input data,
+ *         or other mbedtls error codes as defined in mbedtls error header file.
+ * 
+ * \note The hostname set should match the CN in the server certificate.
+ * 
+ * Usage:
+ * \code
+ *      sslclient_context ssl_client;
+ *      const char *host = "example.com";
+ *      int ret = set_hostname_for_tls(&ssl_client, host);
+ *      if(ret != 0) {
+ *          // handle error
+ *      }
+ * \endcode
+ */
+int set_hostname_for_tls(sslclient_context *ssl_client, const char *host) {
+  int ret;
+  log_v("Setting hostname for TLS session...");
+
+  // Hostname set here should match CN in server certificate
+  ret = mbedtls_ssl_set_hostname(&ssl_client->ssl_ctx, host);
+    
+  if (ret == MBEDTLS_ERR_SSL_ALLOC_FAILED || ret == MBEDTLS_ERR_SSL_BAD_INPUT_DATA || ret != 0) {
+    log_e("Failed to set hostname for tls session");
+    return ret;
+  }
+
+  mbedtls_ssl_conf_rng(&ssl_client->ssl_conf, mbedtls_ctr_drbg_random, &ssl_client->drbg_ctx);
+
+  ret = mbedtls_ssl_setup(&ssl_client->ssl_ctx, &ssl_client->ssl_conf);
+
+  return ret;
+}
+
+/**
+ * \brief Configures IO callbacks and sets a read timeout for the SSL client context.
+ *
+ * This function sets up the IO callbacks for sending, receiving, and receiving with timeout 
+ * for the provided SSL client context. It also configures the read timeout for the SSL client context.
+ *
+ * \param ssl_client A pointer to the sslclient_context structure representing the SSL client context.
+ * \param timeout The timeout value in milliseconds for reading operations.
+ *
+ * \return int Returns 0 on success, -1 
+ *
+ * Usage:
+ * \code
+ *      sslclient_context ssl_client;
+ *      int timeout = 5000;  // 5 seconds
+ *      int ret = set_io_callbacks_and_timeout(&ssl_client, timeout);
+ *      if (ret != 0) {
+ *          // handle error
+ *      }
+ * \endcode
+ *
+ * \note The function assumes that the sslclient_context structure is properly initialized and the 
+ *       client_net_send, client_net_recv, and client_net_recv_timeout functions are correctly implemented.
+ */
+int set_io_callbacks_and_timeout(sslclient_context *ssl_client, int timeout) {
+  if (ssl_client == nullptr) {
+    log_e("Uninitialised context!");
+    return -1;
+  }
+  
+  if (timeout < 0) {
+    log_e("Invalid timeout value");
+    return -2;
+  }
+
+  log_v("Setting up IO callbacks...");
+  mbedtls_ssl_set_bio(&ssl_client->ssl_ctx, ssl_client, client_net_send, client_net_recv, client_net_recv_timeout);
+
+  log_v("Setting timeout to %i", timeout);
+  mbedtls_ssl_conf_read_timeout(&ssl_client->ssl_conf, timeout);
+
+  return 0;
+}
+
+/**
+ * \brief Performs the SSL/TLS handshake for a given SSL client context.
+ *
+ * This function initiates and manages the SSL/TLS handshake process. It also checks for 
+ * timeout conditions and handles client certificate and key if provided.
+ * 
+ * \param ssl_client A pointer to the sslclient_context structure representing the SSL client context.
+ * \param func_ret A pointer to an integer where a specific error code can be stored for further analysis.
+ * \param cli_cert A pointer to a character string representing the client's certificate. If not needed, pass NULL.
+ * \param cli_key A pointer to a character string representing the client's private key. If not needed, pass NULL.
+ *
+ * \return int Returns 0 on successful handshake completion. Returns -1 if the handshake process 
+ *         times out. Returns a mbedtls error code if any other error occurs during the handshake process.
+ *
+ * Usage:
+ * \code
+ *      sslclient_context ssl_client;
+ *      int func_ret = 0;
+ *      const char *cli_cert = "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----";
+ *      const char *cli_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----";
+ *      int ret = perform_ssl_handshake(&ssl_client, &func_ret, cli_cert, cli_key);
+ *      if(ret != 0) {
+ *          // handle error
+ *      }
+ * \endcode
+ *
+ * \note This function assumes that the sslclient_context structure is properly initialized and the 
+ *       mbedtls libraries are correctly configured.
+ */
+int perform_ssl_handshake(sslclient_context *ssl_client, int *func_ret, const char *cli_cert, const char *cli_key) {
+  if (ssl_client == nullptr) {
+    log_e("Uninitialised context!");
+    return -1;
+  }
+
+  int ret = 0;
+  bool breakBothLoops = false;
+  log_v("Performing the SSL/TLS handshake...");
+  unsigned long handshake_start_time = millis();
+
+  while ((ret = mbedtls_ssl_handshake(&ssl_client->ssl_ctx)) != 0) {
+    if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+      break;
+    }
+    if ((millis()-handshake_start_time) > ssl_client->handshake_timeout) {
+      log_e("SSL handshake timeout");
+      if (func_ret != nullptr) {
+        *func_ret = -4;
+      } else {
+        log_e("func_ret is null!");
+      }
+      breakBothLoops = true;
+      break; 
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+  }
+
+  if (breakBothLoops) {
+    return -1; // TODO ensure outer do while is broken TODO review this value
+  }
+
+  if (cli_cert != NULL && cli_key != NULL) {
+    log_v("Protocol is %s Ciphersuite is %s", mbedtls_ssl_get_version(&ssl_client->ssl_ctx), mbedtls_ssl_get_ciphersuite(&ssl_client->ssl_ctx));
+    ret = mbedtls_ssl_get_record_expansion(&ssl_client->ssl_ctx);
+    if (ret != 0) {
+      if (ret == MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE) {
+        log_w("Record expansion is not available (compression)");
+      } else {
+        log_e(" mbedtls_ssl_get_record_expansion returned -0x%x", -ret);
+      }
+    } else {
+      log_w("Record expansion is unknown (compression)");
+    }
+  }
+  return ret;
+}
+
+/**
+ * \brief Verifies the server's certificate using the provided SSL client context.
+ *
+ * This function performs a verification of the server's certificate to ensure it's valid and trustworthy.
+ * The verification process checks the server certificate against the provided root CA. 
+ * If client certificate and key are provided, they can be used for further verification or cleanup.
+ *
+ * \param ssl_client A pointer to the sslclient_context structure representing the SSL client context.
+ * \param ret The return value of the mbedtls_ssl_handshake function.
+ * \param rootCABuff A pointer to a character string containing the root CA certificate.
+ * \param cli_cert A pointer to a character string representing the client's certificate. If not needed, pass NULL.
+ * \param cli_key A pointer to a character string representing the client's private key. If not needed, pass NULL.
+ *
+ * \return int Returns 0 on successful verification. Returns a non-zero error code on failure,
+ *         which can be obtained from the mbedtls library.
+ *
+ * Usage:
+ * \code
+ *      sslclient_context ssl_client;
+ *      const char *rootCABuff = "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----";
+ *      const char *cli_cert = "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----";
+ *      const char *cli_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----";
+ *      int ret = verify_server_cert(&ssl_client, rootCABuff, cli_cert, cli_key);
+ *      if(ret != 0) {
+ *          // handle error
+ *      }
+ * \endcode
+ *
+ * \note This function assumes that the sslclient_context structure is properly initialized and the 
+ *       mbedtls libraries are correctly configured. Also, ensure that the root CA certificate is correct 
+ *       and corresponds to the CA that issued the server's certificate.
+ */
+int verify_server_cert(sslclient_context *ssl_client, int ret, const char *rootCABuff, const char *cli_cert, const char *cli_key) {
+  log_v("Verifying peer X.509 certificate...");
+
+  int flags = mbedtls_ssl_get_verify_result(&ssl_client->ssl_ctx);
+
+  if (ret != 0) {
+    char buf[512];
+    memset(buf, 0, sizeof(buf));
+    mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
+    log_e("Failed to verify peer certificate! verification info: %s", buf);
+    stop_ssl_socket(ssl_client, rootCABuff, cli_cert, cli_key);  // It's not safe continue.
+  } else {
+    log_v("Certificate verified.");
   }
   return ret;
 }

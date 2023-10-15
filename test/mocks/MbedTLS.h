@@ -5,6 +5,8 @@
 
 // #define MBEDTLS_ERROR_C
 #define MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
+#define MBEDTLS_X509_BADCERT_NOT_TRUSTED            -0x08
+#define MBEDTLS_ERR_X509_CERT_VERIFY_FAILED         -0x2700
 #define MBEDTLS_ERR_SSL_WANT_READ                   -0x6900
 #define MBEDTLS_ERR_NET_SEND_FAILED                 -0x004E
 #define MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED  -0x0034
@@ -13,6 +15,7 @@
 #define MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE         -0x7080
 #define MBEDTLS_ERR_SSL_WANT_WRITE                  -0x6880
 #define MBEDTLS_ERR_NET_CONN_RESET                  -0x004C
+#define MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE         -0x7780
 #define MBEDTLS_SSL_IS_CLIENT                       0
 #define MBEDTLS_SSL_TRANSPORT_STREAM                0
 #define MBEDTLS_SSL_PRESET_DEFAULT                  0
@@ -22,7 +25,6 @@
 #define MBEDTLS_OID_ISO_CCITT_DS                    "\x55"
 #define MBEDTLS_OID_AT                              "\x55\x04"
 #define MBEDTLS_OID_AT_CN                           "\x55\x04\x03"
-// #define MBEDTLS_OID_CMP(oid_str, oid_buf)           (strncmp((oid_str), (char*)(oid_buf)->p, (oid_buf)->len) == 0)
 #define MBEDTLS_OID_CMP(oid_str, oid_buf)           (false)
 #define MBEDTLS_ASN1_IA5_STRING                     0x16
 #define MBEDTLS_ASN1_OID                            0x06
