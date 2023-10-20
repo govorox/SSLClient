@@ -111,7 +111,6 @@ void test_partial_write(void) {
   // Act
   int result = client_net_send(&testClient, buf, sizeof(buf));
   
-
   // Assert
   TEST_ASSERT_EQUAL_INT(1500, result); // Only half the buffer is sent
 }
@@ -259,7 +258,7 @@ void test_ctx_is_null(void) {
   int result = client_net_recv_timeout(nullptr, buf, 10, 1000);
   
   // Assert
-  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_FALSE(log_v_stub.wasCalled());
   TEST_ASSERT_EQUAL_INT(1, log_e_stub.timesCalled());
   TEST_ASSERT_EQUAL_INT(-1, result);
 }
@@ -391,10 +390,8 @@ void test_data_to_read_success() {
   
   // Act
   int result = data_to_read(testContext);
-  ArgContext args = log_d_stub.getArguments();
   
   // Assert
-  // TEST_ASSERT_EQUAL_STRING("RET: 5", log_d_Args[0].c_str());
   TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 2);
   TEST_ASSERT_FALSE(log_e_stub.wasCalled());
   TEST_ASSERT_EQUAL(5, result); 
@@ -407,8 +404,6 @@ void test_data_to_read_edge_case() {
   
   // Act
   int result = data_to_read(testContext);
-  ArgContext argsD = log_d_stub.getArguments();
-  ArgContext argsE = log_e_stub.getArguments();
   
   // Assert
   // TEST_ASSERT_EQUAL_STRING("RET: -26880", log_d_Args[0].c_str());
@@ -424,8 +419,6 @@ void test_data_to_read_failure() {
   
   // Act
   int result = data_to_read(testContext);
-  ArgContext argsD = log_d_stub.getArguments();
-  ArgContext argsE = log_e_stub.getArguments();
   
   // Assert
   TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 2);
@@ -440,6 +433,359 @@ void run_data_to_read_tests(void) {
   RUN_TEST(test_data_to_read_failure);
   UNITY_END();
 }
+
+/* test log_failed_cert function */
+
+void test_log_failed_cert_with_some_flags(void) {
+    // Arrange
+    int flags = MBEDTLS_X509_BADCERT_EXPIRED;
+    
+    // Act
+    log_failed_cert(flags);
+    
+    // Assert
+    TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
+}
+
+void test_log_failed_cert_with_null_flags(void) {
+    // Arrange
+    int flags = NULL; 
+    
+    // Act
+    log_failed_cert(flags);
+    
+    // Assert
+    TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+}
+
+void run_log_failed_cert_tests(void) {  
+  UNITY_BEGIN();
+  RUN_TEST(test_log_failed_cert_with_some_flags);
+  RUN_TEST(test_log_failed_cert_with_null_flags);
+  UNITY_END();
+}
+
+/* test cleanup function */
+
+void test_cleanup_with_all_resources_initialized_and_no_error(void) {
+  // Arrange
+  bool ca_cert_initialized = true;
+  bool client_cert_initialized = true;
+  bool client_key_initialized = true;
+  int ret = 0;
+
+  // Act
+  cleanup(testContext, ca_cert_initialized, client_cert_initialized, client_key_initialized, ret, NULL, NULL, NULL);
+  
+  // Assert
+  TEST_ASSERT_TRUE(mbedtls_x509_crt_free_stub.timesCalled() == 2);
+  TEST_ASSERT_TRUE(mbedtls_pk_free_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+}
+
+void test_cleanup_with_some_resources_initialized_and_no_error(void) {
+  // Arrange
+  sslclient_context ssl_client;
+  bool ca_cert_initialized = true;
+  bool client_cert_initialized = false;
+  bool client_key_initialized = true;
+  int ret = 0;
+
+  // Act
+  cleanup(&ssl_client, ca_cert_initialized, client_cert_initialized, client_key_initialized, ret, NULL, NULL, NULL);
+  
+  // Assert
+  TEST_ASSERT_TRUE(mbedtls_x509_crt_free_stub.timesCalled() == 1);
+  TEST_ASSERT_TRUE(mbedtls_pk_free_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+}
+
+void run_cleanup_tests() {
+  UNITY_BEGIN();
+  RUN_TEST(test_cleanup_with_all_resources_initialized_and_no_error);
+  RUN_TEST(test_cleanup_with_some_resources_initialized_and_no_error);
+  UNITY_END();
+}
+
+/* test start_ssl_client function */
+
+void test_successful_ssl_client_start(void) {
+  // Arrange
+  testClient.reset();
+  testContext->client = &testClient;
+  testClient.returns("connect", (int)1);
+  testContext->client = &testClient;
+  const char *host = "example.com";
+  uint32_t port = 443;
+  int timeout = 1000;
+  const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
+  const char *pskIdent = NULL;
+  const char *psKey = NULL;
+  
+  mbedtls_ctr_drbg_seed_stub.returns("mbedtls_ctr_drbg_seed", 0);
+  mbedtls_ssl_config_defaults_stub.returns("mbedtls_ssl_config_defaults", 0);
+  mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", 0);
+  mbedtls_pk_parse_key_stub.returns("mbedtls_pk_parse_key", 0);
+  mbedtls_ssl_conf_own_cert_stub.returns("mbedtls_ssl_conf_own_cert", 0);
+  mbedtls_ssl_set_hostname_stub.returns("mbedtls_ssl_set_hostname", 0);
+  mbedtls_ssl_setup_stub.returns("mbedtls_ssl_setup", 0);
+  mbedtls_ssl_handshake_stub.returns("mbedtls_ssl_handshake", 0);
+  mbedtls_ssl_get_record_expansion_stub.returns("mbedtls_ssl_get_record_expansion", 0);
+  mbedtls_ssl_get_verify_result_stub.returns("mbedtls_ssl_get_verify_result", (uint32_t)0);
+
+  // Act
+  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+
+  // Assert
+  TEST_ASSERT_EQUAL(1, result);
+}
+
+void test_ssl_client_start_with_invalid_host(void) {
+  // Arrange
+  testClient.reset();
+  testContext->client = &testClient;
+  testClient.returns("connect", (int)0);
+  const char *host = "example.com";
+  uint32_t port = 443;
+  int timeout = 1000;
+  const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
+  const char *pskIdent = NULL;
+  const char *psKey = NULL;
+
+  // Act
+  int result = start_ssl_client(testContext, "invalid_host", port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+
+  // Assert
+  TEST_ASSERT_EQUAL(0, result);
+}
+
+void test_ssl_client_start_invalid_port(void) {
+  // Arrange
+  testClient.reset();
+  testContext->client = &testClient;
+  testClient.returns("connect", (int)0);
+  const char *host = "example.com";
+  int timeout = 1000;
+  const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
+  const char *pskIdent = NULL;
+  const char *psKey = NULL;
+  uint32_t port = (uint32_t)432589743022453;
+  
+  // Act
+  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+  
+  // Assert
+  TEST_ASSERT_EQUAL(0, result);
+}
+
+void test_ssl_client_start_failed_tcp_connection(void) {
+  // Arrange
+  const char *host = "example.com";
+  uint32_t port = 443;
+  int timeout = 1000;
+  const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
+  const char *pskIdent = NULL;
+  const char *psKey = NULL;
+  
+  // Act - null testContext->client
+  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+  
+  // Assert
+  TEST_ASSERT_EQUAL(0, result);
+}
+
+void test_ssl_client_start_failed_ssl_tls_handshake(void) {
+  // Arrange
+  testClient.reset();
+  testContext->client = &testClient;
+  testClient.returns("connect", (int)1);
+  testContext->client = &testClient;
+  const char *host = "example.com";
+  uint32_t port = 443;
+  int timeout = 1000;
+  const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
+  const char *pskIdent = NULL;
+  const char *psKey = NULL;
+  
+  mbedtls_ctr_drbg_seed_stub.returns("mbedtls_ctr_drbg_seed", 0);
+  mbedtls_ssl_config_defaults_stub.returns("mbedtls_ssl_config_defaults", 0);
+  mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", 0);
+  mbedtls_pk_parse_key_stub.returns("mbedtls_pk_parse_key", 0);
+  mbedtls_ssl_conf_own_cert_stub.returns("mbedtls_ssl_conf_own_cert", 0);
+  mbedtls_ssl_set_hostname_stub.returns("mbedtls_ssl_set_hostname", 0);
+  mbedtls_ssl_setup_stub.returns("mbedtls_ssl_setup", 0);
+  mbedtls_ssl_handshake_stub.returns("mbedtls_ssl_handshake", 0);
+  mbedtls_ssl_get_record_expansion_stub.returns("mbedtls_ssl_get_record_expansion", MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE);
+  
+  // Act
+  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+  
+  // Assert
+  TEST_ASSERT_EQUAL(0, result);
+}
+
+void run_start_ssl_client_tests() {
+  UNITY_BEGIN();
+  RUN_TEST(test_successful_ssl_client_start);
+  RUN_TEST(test_ssl_client_start_with_invalid_host);
+  RUN_TEST(test_ssl_client_start_invalid_port);
+  RUN_TEST(test_ssl_client_start_failed_tcp_connection);
+  RUN_TEST(test_ssl_client_start_failed_ssl_tls_handshake);
+  UNITY_END();
+}
+
+/* test init_tcp_connection function */
+
+void test_init_tcp_connection_SuccessfulConnection_ReturnsZero(void) {
+  // Arrange
+  testContext->client = &testClient;
+  testClient.reset();
+  testClient.returns("connect", (int)1);
+  const char* host = "example.com";
+  uint32_t port = 443;
+
+  // Act
+  int result = init_tcp_connection(testContext, host, port);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_init_tcp_connection_NullClient_ReturnsMinusOne(void) {
+  // Arrange
+  const char* host = "example.com";
+  uint32_t port = 443;
+  testContext->client = nullptr;
+
+  // Act
+  int result = init_tcp_connection(testContext, host, port);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_v_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_e_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+void test_init_tcp_connection_FailedConnection_ReturnsMinusTwo(void) {
+  // Arrange
+  testContext->client = &testClient;
+  testClient.reset();
+  testClient.returns("connect", (int)0);
+  const char* host = "example.com";
+  uint32_t port = 443;
+
+  // Act
+  int result = init_tcp_connection(testContext, host, port);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_e_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(-2, result);
+}
+
+void test_init_tcp_connection_EdgeCase_LargePortNumber_SuccessfulConnection(void) {
+  // Arrange
+  testContext->client = &testClient;
+  testClient.reset();
+  testClient.returns("connect", (int)1);
+  const char* host = "example.com";
+  uint32_t largePort = UINT32_MAX;
+
+  // Act
+  int result = init_tcp_connection(testContext, host, largePort);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void run_init_tcp_connection_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_init_tcp_connection_SuccessfulConnection_ReturnsZero);
+  RUN_TEST(test_init_tcp_connection_NullClient_ReturnsMinusOne);
+  RUN_TEST(test_init_tcp_connection_FailedConnection_ReturnsMinusTwo);
+  RUN_TEST(test_init_tcp_connection_EdgeCase_LargePortNumber_SuccessfulConnection);
+  UNITY_END();
+}
+
+/* test seed_random_number_generator function */
+
+void test_seed_random_number_generator_SuccessfulSeed_ReturnsZero(void) {
+  // Arrange
+  mbedtls_ctr_drbg_seed_stub.returns("mbedtls_ctr_drbg_seed", 0);
+
+  // Act
+  int result = seed_random_number_generator(testContext);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(2, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_seed_random_number_generator_CtrDrbgSeedFails_ReturnsErrorCode(void) {
+  // Arrange
+  mbedtls_ctr_drbg_seed_stub.returns("mbedtls_ctr_drbg_seed", MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED);
+
+  // Act
+  int result = seed_random_number_generator(testContext);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(2, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED, result);
+}
+
+void run_seed_random_number_generator_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_seed_random_number_generator_SuccessfulSeed_ReturnsZero);
+  RUN_TEST(test_seed_random_number_generator_CtrDrbgSeedFails_ReturnsErrorCode);
+  UNITY_END();
+}
+
+/* Test set_up_tls_defaults function */
+
+void test_set_up_tls_defaults_SuccessfulSetup_ReturnsZero(void) {
+  // Arrange
+  mbedtls_ssl_config_defaults_stub.returns("mbedtls_ssl_config_defaults", 0);
+
+  // Act
+  int result = set_up_tls_defaults(testContext);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_set_up_tls_defaults_FailedSetup_ReturnsErrorCode(void) {
+  // Arrange
+  mbedtls_ssl_config_defaults_stub.returns("mbedtls_ssl_config_defaults", -1);
+
+  // Act
+  int result = set_up_tls_defaults(testContext);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(1, log_v_stub.timesCalled());
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+void run_set_up_tls_defaults_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_set_up_tls_defaults_SuccessfulSetup_ReturnsZero);
+  RUN_TEST(test_set_up_tls_defaults_FailedSetup_ReturnsErrorCode);
+  UNITY_END();
+} 
 
 /* test stop_ssl_socket function */
 
@@ -1034,6 +1380,512 @@ void run_verify_ssl_dn_tests(void) {
   UNITY_END();
 }
 
+/* test auth_root_ca_buff function */
+
+void test_auth_root_ca_buff_success(void) {
+  // Arrange
+  const char *valid_ca_buff = "<valid certificate buffer>";
+  bool ca_cert_initialized = false;
+  mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", 0);
+
+  // Act
+  int result = auth_root_ca_buff(testContext, valid_ca_buff, &ca_cert_initialized, NULL, NULL);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, result, "Expected successful configuration.");
+}
+
+void test_auth_root_ca_buff_failure(void) {
+  // Arrange
+  const char *invalid_ca_buff = "<invalid certificate buffer>";
+  bool ca_cert_initialized = false;
+  mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE);
+
+  // Act
+  int result = auth_root_ca_buff(testContext, invalid_ca_buff, &ca_cert_initialized, NULL, NULL);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT_MESSAGE(MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE, result, "Expected failure in configuration.");
+}
+
+void test_auth_root_ca_buff_edge(void) {
+  // Arrange
+  int returnVal = -1;
+
+  // Act
+  int result = auth_root_ca_buff(testContext, NULL, NULL, "<pskIdent>", "<psKey>");
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(returnVal, result);
+}
+
+void test_auth_root_ca_buff_null_ssl_client(void) {
+  // Arrange
+  int func_ret = 0;
+  int returnVal = -1;
+
+  // Act
+  int result = auth_root_ca_buff(NULL, NULL, NULL, NULL, NULL);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 0);
+  TEST_ASSERT_EQUAL_INT(returnVal, result);
+}
+
+void test_auth_root_ca_buff_invalid_ca_valid_psk(void) {
+  // Arrange
+  const char *invalid_ca_buff = "<invalid certificate buffer>";
+  const char *valid_pskIdent = "<valid psk identity>";
+  const char *valid_psKey = "<valid psk key>";
+  bool ca_cert_initialized = false;
+  mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE);
+
+  // Act
+  int result = auth_root_ca_buff(testContext, invalid_ca_buff, &ca_cert_initialized, valid_pskIdent, valid_psKey);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 0);
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE, result);
+}
+
+void test_auth_root_ca_buff_valid_ca_valid_psk(void) {
+  // Arrange
+  const char *valid_ca_buff = "<valid certificate buffer>";
+  const char *valid_pskIdent = "<valid psk identity>";
+  const char *valid_psKey = "<valid psk key>";
+  int returnVal = -1;
+
+  // Act
+  int result = auth_root_ca_buff(testContext, valid_ca_buff, NULL, valid_pskIdent, valid_psKey);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL_INT(returnVal, result);
+}
+
+void test_auth_root_ca_buff_long_psk(void) {
+  // Arrange
+  const char *long_psKey = "<very long psk key>";
+
+  // Act
+  int result = auth_root_ca_buff(testContext, NULL, NULL, "<valid psk identity>", long_psKey);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+void test_auth_root_ca_buff_malformed_psk(void) {
+  // Arrange
+  const char *malformed_psKey = "<malformed psk key>";
+
+  // Act
+  int result = auth_root_ca_buff(testContext, NULL, NULL, "<valid psk identity>", malformed_psKey);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+void run_auth_root_ca_buff_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_auth_root_ca_buff_success);
+  RUN_TEST(test_auth_root_ca_buff_failure);
+  RUN_TEST(test_auth_root_ca_buff_edge);
+  RUN_TEST(test_auth_root_ca_buff_null_ssl_client);
+  RUN_TEST(test_auth_root_ca_buff_invalid_ca_valid_psk);
+  RUN_TEST(test_auth_root_ca_buff_valid_ca_valid_psk);
+  RUN_TEST(test_auth_root_ca_buff_long_psk);
+  RUN_TEST(test_auth_root_ca_buff_malformed_psk);
+  UNITY_END();
+}
+
+/* test auth_client_cert_key function */
+
+void test_auth_client_cert_key_both_null() {
+  // Arrange / Act
+  int result = auth_client_cert_key(testContext, NULL, NULL, nullptr, nullptr);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_auth_client_cert_key_cert_null() {
+  // Arrange / Act
+  int result = auth_client_cert_key(testContext, NULL, "<valid_key>", nullptr, nullptr);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_auth_client_cert_key_key_null() {
+  // Arrange / Act
+  int result = auth_client_cert_key(testContext, "<valid_cert>", NULL, nullptr, nullptr);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_auth_client_cert_key_valid() {
+  // Arrange
+  mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", 0);
+  bool cert_init = false, key_init = false;
+
+  // Act
+  int result = auth_client_cert_key(testContext, "<valid_cert>", "<valid_key>", &cert_init, &key_init);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(0, result);
+  TEST_ASSERT_TRUE(cert_init);
+  TEST_ASSERT_TRUE(key_init);
+}
+
+void test_auth_client_cert_key_invalid_cert() {
+  // Arrange
+  mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", MBEDTLS_X509_BADCERT_NOT_TRUSTED);
+  bool cert_init = false, key_init = false;
+
+  // Act
+  int result = auth_client_cert_key(testContext, "<invalid_cert>", "<valid_key>", &cert_init, &key_init);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_X509_BADCERT_NOT_TRUSTED, result);
+  TEST_ASSERT_FALSE(cert_init);
+}
+
+void test_auth_client_cert_key_invalid_key() {
+  // Arrange
+  mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", MBEDTLS_X509_BADCERT_NOT_TRUSTED);
+  bool cert_init = false, key_init = false;
+
+  // Act
+  int result = auth_client_cert_key(testContext, "<valid_cert>", "<invalid_key>", &cert_init, &key_init);
+  
+  // Assert
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_X509_BADCERT_NOT_TRUSTED, result);
+  TEST_ASSERT_FALSE(key_init);
+}
+
+void run_auth_client_cert_key_tests(void) {
+  UNITY_BEGIN();
+  RUN_TEST(test_auth_client_cert_key_both_null);
+  RUN_TEST(test_auth_client_cert_key_cert_null);
+  RUN_TEST(test_auth_client_cert_key_key_null);
+  RUN_TEST(test_auth_client_cert_key_valid);
+  RUN_TEST(test_auth_client_cert_key_invalid_cert);
+  RUN_TEST(test_auth_client_cert_key_invalid_key);
+  UNITY_END();
+}
+
+/* test set_hostname_for_tls function */
+
+void test_set_hostname_for_tls_success(void) {
+  // Arrange
+  const char *host = "example.com";
+  mbedtls_ssl_set_hostname_stub.returns("mbedtls_ssl_set_hostname", 0);
+  mbedtls_ssl_setup_stub.returns("mbedtls_ssl_setup", 0);
+
+  // Act
+  int result = set_hostname_for_tls(testContext, host);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_set_hostname_for_tls_null_host(void) {
+  // Arrange
+  mbedtls_ssl_set_hostname_stub.returns("mbedtls_ssl_set_hostname", MBEDTLS_ERR_SSL_BAD_INPUT_DATA);
+  const char *host = NULL;
+
+  // Act
+  int result = set_hostname_for_tls(testContext, host);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_BAD_INPUT_DATA, result);
+}
+
+void test_set_hostname_for_tls_empty_host(void) {
+  // Arrange
+  mbedtls_ssl_set_hostname_stub.returns("mbedtls_ssl_set_hostname", MBEDTLS_ERR_SSL_BAD_INPUT_DATA);
+  const char *host = "";
+
+  // Act
+  int result = set_hostname_for_tls(testContext, host);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_BAD_INPUT_DATA, result);
+}
+
+void test_set_hostname_for_tls_alloc_failed(void) {
+  // Arrange
+  mbedtls_ssl_set_hostname_stub.returns("mbedtls_ssl_set_hostname", MBEDTLS_ERR_SSL_ALLOC_FAILED);
+  const char *host = "example.com";
+
+  // Act
+  int result = set_hostname_for_tls(testContext, host);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_ALLOC_FAILED, result);
+}
+
+void test_set_hostname_for_tls_ssl_setup_failed(void) {
+  // Arrange
+  mbedtls_ssl_set_hostname_stub.returns("mbedtls_ssl_set_hostname", 0);
+  mbedtls_ssl_setup_stub.returns("mbedtls_ssl_setup", MBEDTLS_ERR_SSL_ALLOC_FAILED);
+  const char *host = "example.com";
+
+  // Act
+  int result = set_hostname_for_tls(testContext, host);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 0);
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_ALLOC_FAILED, result);
+}
+
+void run_set_hostname_for_tls_tests() {
+  UNITY_BEGIN();
+  RUN_TEST(test_set_hostname_for_tls_success);
+  RUN_TEST(test_set_hostname_for_tls_null_host);
+  RUN_TEST(test_set_hostname_for_tls_empty_host);
+  RUN_TEST(test_set_hostname_for_tls_alloc_failed);
+  RUN_TEST(test_set_hostname_for_tls_ssl_setup_failed);
+  UNITY_END();
+}
+
+/* test set_io_callbacks function */
+
+void test_set_io_callbacks_and_timeout_success(void) {
+  // Arrange
+  int successfulReturn = 0;
+
+  // Act
+  int result = set_io_callbacks_and_timeout(testContext, 5000);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 2);
+  TEST_ASSERT_EQUAL_INT(successfulReturn, result);
+}
+
+void test_set_io_callbacks_and_timeout_zero_timeout(void) {
+  // Arrange
+  int successfulReturn = 0;
+
+  // Act
+  int result = set_io_callbacks_and_timeout(testContext, 0);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 2);
+  TEST_ASSERT_EQUAL_INT(successfulReturn, result);
+}
+
+void test_set_io_callbacks_and_timeout_negative_timeout(void) {
+  // Arrange
+  int failedReturn = -2;
+
+  // Act
+  int result = set_io_callbacks_and_timeout(testContext, -5000);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_v_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL_INT(failedReturn, result);
+}
+
+void test_set_io_callbacks_and_timeout_null_context(void) {
+  // Arrange
+  int failedReturn = -1;
+
+  // Act
+  int result = set_io_callbacks_and_timeout(NULL, 5000);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(failedReturn, result);
+}
+
+void test_set_io_callbacks_and_timeout_large_timeout(void) {
+  // Arrange
+  int successfulReturn = 0;
+
+  // Act
+  int result = set_io_callbacks_and_timeout(testContext, INT_MAX);
+
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void run_set_io_callbacks_tests() {
+  UNITY_BEGIN();
+  RUN_TEST(test_set_io_callbacks_and_timeout_success);
+  RUN_TEST(test_set_io_callbacks_and_timeout_zero_timeout);
+  RUN_TEST(test_set_io_callbacks_and_timeout_negative_timeout);
+  // RUN_TEST(test_set_io_callbacks_and_timeout_null_context);
+  RUN_TEST(test_set_io_callbacks_and_timeout_large_timeout);
+  UNITY_END();
+}
+
+/* test perform_ssl_handshake function */
+
+void test_perform_ssl_handshake_success(void) {
+  // Arrange
+  const char *cli_cert = NULL;
+  const char *cli_key = NULL;
+  mbedtls_ssl_handshake_stub.returns("mbedtls_ssl_handshake", 0);
+
+  // Act
+  int result = perform_ssl_handshake(testContext, cli_cert, cli_key);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 1);
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_perform_ssl_handshake_timeout(void) {
+  // Arrange
+  const char *cli_cert = NULL;
+  const char *cli_key = NULL;
+  testContext->handshake_timeout = 1;
+  mbedtls_ssl_handshake_stub.returns("mbedtls_ssl_handshake", MBEDTLS_ERR_SSL_WANT_READ);
+
+  // Act
+  int result = perform_ssl_handshake(testContext, cli_cert, cli_key);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 1);
+  TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+void test_perform_ssl_handshake_cert_key_provided(void) {
+  // Arrange
+  const char *cli_cert = "dummy_cert";
+  const char *cli_key = "dummy_key";
+  mbedtls_ssl_handshake_stub.returns("mbedtls_ssl_handshake", 0);
+  mbedtls_ssl_get_record_expansion_stub.returns("mbedtls_ssl_get_record_expansion", 0);
+
+  // Act
+  int result = perform_ssl_handshake(testContext, cli_cert, cli_key);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 2);
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_w_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_perform_ssl_handshake_null_context(void) {
+  // Arrange
+  const char *cli_cert = NULL;
+  const char *cli_key = NULL;
+
+  // Act
+  int result = perform_ssl_handshake(NULL, cli_cert, cli_key);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
+  TEST_ASSERT_FALSE(log_v_stub.wasCalled());
+  TEST_ASSERT_EQUAL(-1, result);
+}
+
+void test_perform_ssl_handshake_record_expansion_failure(void) {
+  // Arrange
+  const char *cli_cert = "dummy_cert";
+  const char *cli_key = "dummy_key";
+  mbedtls_ssl_handshake_stub.returns("mbedtls_ssl_handshake", 0);
+  mbedtls_ssl_get_record_expansion_stub.returns("mbedtls_ssl_get_record_expansion", MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE);
+
+  // Act
+  int result = perform_ssl_handshake(testContext, cli_cert, cli_key);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 2);
+  TEST_ASSERT_TRUE(log_w_stub.wasCalled());
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE, result);
+}
+
+void run_perform_ssl_handshake_tests() {
+  UNITY_BEGIN();
+  RUN_TEST(test_perform_ssl_handshake_success);
+  RUN_TEST(test_perform_ssl_handshake_timeout);
+  RUN_TEST(test_perform_ssl_handshake_cert_key_provided);
+  RUN_TEST(test_perform_ssl_handshake_null_context);
+  RUN_TEST(test_perform_ssl_handshake_record_expansion_failure);
+  UNITY_END();
+}
+
+/* test verify_server_cert function */
+
+void test_verify_server_cert_success(void) {
+  // Arrange
+  mbedtls_ssl_get_verify_result_stub.returns("mbedtls_ssl_get_verify_result", (uint32_t)0);
+
+  // Act
+  int result = verify_server_cert(testContext);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL_INT(0, result);
+}
+
+void test_verify_server_cert_fail_handshake(void) {
+  // Arrange
+  mbedtls_ssl_get_verify_result_stub.returns("mbedtls_ssl_get_verify_result", (uint32_t)-1u);
+
+  // Act
+  uint32_t result = verify_server_cert(testContext);
+
+  // Assert
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL((uint32_t)-1u, result);
+}
+
+void test_verify_server_cert_null_context(void) {
+  // Arrange / Act
+  int result = verify_server_cert(NULL);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_v_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL(-1, result);
+}
+
+void test_verify_server_cert_mismatched_cert_key(void) {
+  // Arrange
+  mbedtls_ssl_get_verify_result_stub.returns("mbedtls_ssl_get_verify_result", (uint32_t)MBEDTLS_ERR_X509_CERT_VERIFY_FAILED);
+
+  // Act
+  uint32_t result = verify_server_cert(testContext);
+
+  // Assert
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 1);
+  TEST_ASSERT_EQUAL((uint32_t)MBEDTLS_ERR_X509_CERT_VERIFY_FAILED, result);
+}
+
+void run_verify_server_cert_tests() {
+  UNITY_BEGIN();
+  RUN_TEST(test_verify_server_cert_success);
+  RUN_TEST(test_verify_server_cert_fail_handshake);
+  RUN_TEST(test_verify_server_cert_null_context);
+  RUN_TEST(test_verify_server_cert_mismatched_cert_key);
+  UNITY_END();
+}
+
 /* End of test functions */
 
 #ifdef ARDUINO
@@ -1041,13 +1893,10 @@ void run_verify_ssl_dn_tests(void) {
 #include <Arduino.h>
 
 void setup() {
-  delay(2000); // If using Serial, allow time for serial monitor to open
   run_all_tests();
 }
 
-void loop() {
-  // Empty loop
-}
+void loop() {}
 
 #else
 
@@ -1057,6 +1906,18 @@ int main(int argc, char **argv) {
   run_client_net_recv_timeout_tests();
   run_client_net_send_tests();
   run_ssl_init_tests();
+  run_log_failed_cert_tests();
+  run_cleanup_tests();
+  run_start_ssl_client_tests();
+  run_init_tcp_connection_tests();
+  run_seed_random_number_generator_tests();
+  run_set_up_tls_defaults_tests();
+  run_auth_root_ca_buff_tests();
+  run_auth_client_cert_key_tests();
+  run_set_hostname_for_tls_tests();
+  run_set_io_callbacks_tests();
+  run_perform_ssl_handshake_tests();
+  run_verify_server_cert_tests();
   run_stop_ssl_socket_tests();
   run_data_to_read_tests();
   run_send_ssl_data_tests();
