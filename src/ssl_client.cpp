@@ -191,7 +191,7 @@ static int client_net_send(void *ctx, const unsigned char *buf, size_t len) {
     }
   }
   
-  log_d("SSL client TX res=%d len=%zu", result, len);
+  log_v("SSL client TX res=%d len=%zu", result, len);
   
   return result;
 }
@@ -203,7 +203,7 @@ static int client_net_send(void *ctx, const unsigned char *buf, size_t len) {
  * \param client      Client* - The client. 
  */
 void ssl_init(sslclient_context *ssl_client, Client *client) {
-  log_v("Init SSL");
+  log_d("Init SSL");
   // reset embedded pointers to zero
   memset(ssl_client, 0, sizeof(sslclient_context));
   ssl_client->client = client;
@@ -246,7 +246,7 @@ void cleanup(
   if (ret != 0) {
     stop_ssl_socket(ssl_client, rootCABuff, cli_cert, cli_key);  // Stop SSL socket on error
   }
-  log_v("Free internal heap after TLS %u", ESP.getFreeHeap());
+  log_d("Free internal heap after TLS %u", ESP.getFreeHeap());
 }
 
 /**
@@ -300,7 +300,7 @@ int start_ssl_client(
     ret = init_tcp_connection(ssl_client, host, port); // Step 1 - Initiate TCP connection
     if (ret != 0) {
       break;
-    }
+    } 
     ret = seed_random_number_generator(ssl_client); // Step 2 - Seed the random number generator
     if (ret == MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED || ret != 0) {
       break;
@@ -376,7 +376,7 @@ int init_tcp_connection(sslclient_context *ssl_client, const char *host, uint32_
     return -1;
   }
 
-  log_v("Client pointer: %p", (void*) pClient); // log_v
+  log_v("Client pointer: %p", (void*) pClient);
 
   if (!pClient->connect(host, port)) {
     log_e("Connection to server failed!");
@@ -469,7 +469,6 @@ int auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, boo
     }
 
     mbedtls_ssl_conf_ca_chain(&ssl_client->ssl_conf, &ssl_client->ca_cert, NULL);
-    // mbedtls_ssl_conf_verify(&ssl_client->ssl_ctx, my_verify, NULL );
 
     if (ca_cert_initialized != nullptr) {
       *ca_cert_initialized = true;
@@ -514,7 +513,7 @@ int auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, boo
     }
   } else {
     mbedtls_ssl_conf_authmode(&ssl_client->ssl_conf, MBEDTLS_SSL_VERIFY_NONE);
-    log_i("WARNING: Use certificates for a more secure communication!");
+    log_w("WARNING: Use certificates for a more secure communication!");
     ret = 0;
   } 
   return ret;
@@ -652,7 +651,7 @@ int set_io_callbacks_and_timeout(sslclient_context *ssl_client, int timeout) {
   }
 
   log_v("Setting up IO callbacks...");
-  mbedtls_ssl_set_bio(&ssl_client->ssl_ctx, ssl_client, client_net_send, client_net_recv, client_net_recv_timeout);
+  mbedtls_ssl_set_bio(&ssl_client->ssl_ctx, ssl_client->client, client_net_send, NULL, client_net_recv_timeout);
 
   log_v("Setting timeout to %i", timeout);
   mbedtls_ssl_conf_read_timeout(&ssl_client->ssl_conf, timeout);
@@ -689,7 +688,7 @@ int set_io_callbacks_and_timeout(sslclient_context *ssl_client, int timeout) {
  * \note This function assumes that the sslclient_context structure is properly initialized and the 
  *       mbedtls libraries are correctly configured.
  */
-int perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, const char *cli_key) {
+int perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, const char *cli_key) { 
   if (ssl_client == nullptr) {
     log_e("Uninitialised context!");
     return -1;
@@ -697,18 +696,21 @@ int perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, c
 
   int ret = 0;
   bool breakBothLoops = false;
-  log_v("Performing the SSL/TLS handshake...");
+  log_v("Performing the SSL/TLS handshake, timeout %lu ms", ssl_client->handshake_timeout);
   unsigned long handshake_start_time = millis();
+  log_d("calling mbedtls_ssl_handshake with ssl_ctx address %p", (void *)&ssl_client->ssl_ctx);
 
   while ((ret = mbedtls_ssl_handshake(&ssl_client->ssl_ctx)) != 0) {
     if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
       break;
     }
+
     if ((millis()-handshake_start_time) > ssl_client->handshake_timeout) {
       log_e("SSL handshake timeout");
       breakBothLoops = true;
       break; 
     }
+
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 
@@ -723,7 +725,7 @@ int perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, c
       if (ret == MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE) {
         log_w("Record expansion is not available (compression)");
       } else {
-        log_e(" mbedtls_ssl_get_record_expansion returned -0x%x", -ret);
+        log_e("mbedtls_ssl_get_record_expansion returned -0x%x", -ret);
       }
     } else {
       log_w("Record expansion is unknown (compression)");
@@ -786,23 +788,23 @@ int verify_server_cert(sslclient_context *ssl_client) {
  * \param cli_key     const char* - The client key. 
  */
 void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key) {
-  log_v("Cleaning SSL connection.");
+  log_d("Cleaning SSL connection.");
   
   // Stop the client connection
   if (ssl_client && ssl_client->client) {
-    log_v("Stopping SSL client. Current client pointer address: %p", (void *)ssl_client->client);
+    log_d("Stopping SSL client. Current client pointer address: %p", (void *)ssl_client->client);
     ssl_client->client->stop();
   }
 
   if (ssl_client->ssl_conf.ca_chain != NULL) {
-    log_v("Freeing CA cert. Current ca_cert address: %p", (void *)&ssl_client->ca_cert);
+    log_d("Freeing CA cert. Current ca_cert address: %p", (void *)&ssl_client->ca_cert);
 
     // Free the memory associated with the CA certificate
     mbedtls_x509_crt_free(&ssl_client->ca_cert);
   }
 
   if (ssl_client->ssl_conf.key_cert != NULL) {
-    log_v("Freeing client cert and client key. Current client_cert address: %p, client_key address: %p", 
+    log_d("Freeing client cert and client key. Current client_cert address: %p, client_key address: %p", 
           (void *)&ssl_client->client_cert, (void *)&ssl_client->client_key);
 
     // Free the memory associated with the client certificate and key
@@ -811,17 +813,19 @@ void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, cons
   }
 
   // Free other SSL-related contexts and log their current addresses
-  log_v("Freeing SSL context. Current ssl_ctx address: %p", (void *)&ssl_client->ssl_ctx);
+  log_d("Freeing SSL context. Current ssl_ctx address: %p", (void *)&ssl_client->ssl_ctx);
   mbedtls_ssl_free(&ssl_client->ssl_ctx);
 
-  log_v("Freeing SSL config. Current ssl_conf address: %p", (void *)&ssl_client->ssl_conf);
+  log_d("Freeing SSL config. Current ssl_conf address: %p", (void *)&ssl_client->ssl_conf);
   mbedtls_ssl_config_free(&ssl_client->ssl_conf);
 
-  log_v("Freeing DRBG context. Current drbg_ctx address: %p", (void *)&ssl_client->drbg_ctx);
+  log_d("Freeing DRBG context. Current drbg_ctx address: %p", (void *)&ssl_client->drbg_ctx);
   mbedtls_ctr_drbg_free(&ssl_client->drbg_ctx);
 
-  log_v("Freeing entropy context. Current entropy_ctx address: %p", (void *)&ssl_client->entropy_ctx);
+  log_d("Freeing entropy context. Current entropy_ctx address: %p", (void *)&ssl_client->entropy_ctx);
   mbedtls_entropy_free(&ssl_client->entropy_ctx);
+
+  log_d("Finished cleaning SSL connection.");
 }
 
 /**
@@ -834,10 +838,10 @@ int data_to_read(sslclient_context *ssl_client) {
   int ret, res;
   
   ret = mbedtls_ssl_read(&ssl_client->ssl_ctx, NULL, 0);
-  log_d("RET: %i",ret);   // for low level debug
+  log_v("RET: %i",ret);   // for low level debug
   
   res = mbedtls_ssl_get_bytes_avail(&ssl_client->ssl_ctx);
-  log_d("RES: %i",res);    // for low level debug
+  log_v("RES: %i",res);    // for low level debug
   
   if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret < 0) {
     return handle_error(ret);
@@ -864,6 +868,12 @@ int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len
   }
   
   log_v("Writing SSL (%zu bytes)...", len);
+
+  // Print the data being sent
+  // for (size_t i = 0; i < len; i++) {
+  //   log_v("Data[%zu]: %02X", i, data[i]);
+  // }
+
   int ret = -1;
 
   while ((ret = mbedtls_ssl_write(&ssl_client->ssl_ctx, data, len)) <= 0) {
@@ -969,13 +979,13 @@ bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const
     }
 
     if (pos > len - 2) {
-      log_v("pos:%d len:%d fingerprint too short", pos, len);
+      log_d("pos:%d len:%d fingerprint too short", pos, len);
       return false;
     }
 
     uint8_t high, low;
     if (!parse_hex_nibble(fp[pos], &high) || !parse_hex_nibble(fp[pos+1], &low)) {
-      log_v("pos:%d len:%d invalid hex sequence: %c%c", pos, len, fp[pos], fp[pos+1]);
+      log_d("pos:%d len:%d invalid hex sequence: %c%c", pos, len, fp[pos], fp[pos+1]);
       return false;
     }
 
@@ -987,7 +997,7 @@ bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const
   const mbedtls_x509_crt* crt = mbedtls_ssl_get_peer_cert(&ssl_client->ssl_ctx);
 
   if (!crt) {
-    log_v("could not fetch peer certificate");
+    log_w("could not fetch peer certificate");
     return false;
   }
 
@@ -1001,7 +1011,7 @@ bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const
 
   // Check if fingerprints match
   if (memcmp(fingerprint_local, fingerprint_remote, 32)) {
-    log_d("fingerprint doesn't match");
+    log_w("fingerprint doesn't match");
     return false;
   }
 

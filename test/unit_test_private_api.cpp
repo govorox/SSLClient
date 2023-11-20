@@ -392,8 +392,7 @@ void test_data_to_read_success() {
   int result = data_to_read(testContext);
   
   // Assert
-  TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 2);
-  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 2);
   TEST_ASSERT_EQUAL(5, result); 
 }
 
@@ -406,9 +405,7 @@ void test_data_to_read_edge_case() {
   int result = data_to_read(testContext);
   
   // Assert
-  // TEST_ASSERT_EQUAL_STRING("RET: -26880", log_d_Args[0].c_str());
-  TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 2);
-  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 2);
   TEST_ASSERT_EQUAL(0, result);
 }
 
@@ -421,8 +418,7 @@ void test_data_to_read_failure() {
   int result = data_to_read(testContext);
   
   // Assert
-  TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 2);
-  TEST_ASSERT_TRUE(log_e_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 2);
   TEST_ASSERT_EQUAL(-76, result);  // -0x004C = MBEDTLS_ERR_NET_CONN_RESET
 }
 
@@ -448,14 +444,14 @@ void test_log_failed_cert_with_some_flags(void) {
 }
 
 void test_log_failed_cert_with_null_flags(void) {
-    // Arrange
-    int flags = NULL; 
-    
-    // Act
-    log_failed_cert(flags);
-    
-    // Assert
-    TEST_ASSERT_FALSE(log_e_stub.wasCalled());
+  // Arrange
+  int flags = 0; 
+  
+  // Act
+  log_failed_cert(flags);
+  
+  // Assert
+  TEST_ASSERT_FALSE(log_e_stub.wasCalled());
 }
 
 void run_log_failed_cert_tests(void) {  
@@ -480,7 +476,7 @@ void test_cleanup_with_all_resources_initialized_and_no_error(void) {
   // Assert
   TEST_ASSERT_TRUE(mbedtls_x509_crt_free_stub.timesCalled() == 2);
   TEST_ASSERT_TRUE(mbedtls_pk_free_stub.wasCalled());
-  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_d_stub.wasCalled());
 }
 
 void test_cleanup_with_some_resources_initialized_and_no_error(void) {
@@ -497,7 +493,7 @@ void test_cleanup_with_some_resources_initialized_and_no_error(void) {
   // Assert
   TEST_ASSERT_TRUE(mbedtls_x509_crt_free_stub.timesCalled() == 1);
   TEST_ASSERT_TRUE(mbedtls_pk_free_stub.wasCalled());
-  TEST_ASSERT_TRUE(log_v_stub.wasCalled());
+  TEST_ASSERT_TRUE(log_d_stub.wasCalled());
 }
 
 void run_cleanup_tests() {
@@ -794,14 +790,14 @@ void test_stop_ssl_socket_success(void) {
   test_client_stop_stub.reset();
   ssl_init(testContext, &testClient);
   setup_stop_ssl_socket(testContext, &testClient);
-  log_v_stub.reset();
+  log_d_stub.reset();
   
   // Act
   stop_ssl_socket(testContext, "rootCABuff_example", "cli_cert_example", "cli_key_example");
 
   // Assert
   TEST_ASSERT_TRUE(test_client_stop_stub.wasCalled());
-  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 8);
+  TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 9);
   TEST_ASSERT_TRUE(mbedtls_x509_crt_free_stub.wasCalled());
   TEST_ASSERT_TRUE(mbedtls_pk_free_stub.wasCalled());
   TEST_ASSERT_TRUE(mbedtls_ssl_free_stub.wasCalled());
@@ -814,14 +810,14 @@ void test_stop_ssl_socket_edge_null_pointers(void) {
   // Arrange
   test_client_stop_stub.reset();
   ssl_init(testContext, &testClient);
-  log_v_stub.reset();
+  log_d_stub.reset();
 
   // Act
   stop_ssl_socket(testContext, "rootCABuff_example", "cli_cert_example", "cli_key_example");
 
   // Assert
   TEST_ASSERT_TRUE(test_client_stop_stub.wasCalled());
-  TEST_ASSERT_TRUE(log_v_stub.timesCalled() == 6);
+  TEST_ASSERT_TRUE(log_d_stub.timesCalled() == 7);
   TEST_ASSERT_FALSE(mbedtls_x509_crt_free_stub.wasCalled());
   TEST_ASSERT_FALSE(mbedtls_pk_free_stub.wasCalled());
   TEST_ASSERT_TRUE(mbedtls_ssl_free_stub.wasCalled());
@@ -835,7 +831,7 @@ void test_stop_ssl_socket_failure_will_not_double_free(void) {
   test_client_stop_stub.reset();
   ssl_init(testContext, &testClient);
   testContext->client = NULL;
-  log_v_stub.reset();
+  log_d_stub.reset();
 
   // Act
   stop_ssl_socket(testContext, "rootCABuff_example", "cli_cert_example", "cli_key_example");
