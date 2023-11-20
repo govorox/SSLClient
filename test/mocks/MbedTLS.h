@@ -5,6 +5,10 @@
 
 // #define MBEDTLS_ERROR_C
 #define MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
+#define MBEDTLS_X509_BADCERT_EXPIRED                -0x01
+#define MBEDTLS_X509_BADCERT_NOT_TRUSTED            -0x08
+#define MBEDTLS_ERR_X509_CERT_VERIFY_FAILED         -0x2700
+#define MBEDTLS_X509_BADCERT_OTHER                  -0x0100
 #define MBEDTLS_ERR_SSL_WANT_READ                   -0x6900
 #define MBEDTLS_ERR_NET_SEND_FAILED                 -0x004E
 #define MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED  -0x0034
@@ -12,6 +16,8 @@
 #define MBEDTLS_ERR_SSL_BAD_INPUT_DATA              -0x7100
 #define MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE         -0x7080
 #define MBEDTLS_ERR_SSL_WANT_WRITE                  -0x6880
+#define MBEDTLS_ERR_NET_CONN_RESET                  -0x004C
+#define MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE         -0x7780
 #define MBEDTLS_SSL_IS_CLIENT                       0
 #define MBEDTLS_SSL_TRANSPORT_STREAM                0
 #define MBEDTLS_SSL_PRESET_DEFAULT                  0
@@ -19,9 +25,11 @@
 #define MBEDTLS_PSK_MAX_LEN                         32
 #define MBEDTLS_SSL_VERIFY_NONE                     0
 #define MBEDTLS_OID_ISO_CCITT_DS                    "\x55"
-#define MBEDTLS_OID_AT                              MBEDTLS_OID_ISO_CCITT_DS "\x04"
-#define MBEDTLS_OID_AT_CN                           MBEDTLS_OID_AT "\x03"
-#define MBEDTLS_OID_CMP(oid_str, oid_buf)           (strncmp((oid_str), (char*)(oid_buf)->p, (oid_buf)->len) == 0)
+#define MBEDTLS_OID_AT                              "\x55\x04"
+#define MBEDTLS_OID_AT_CN                           "\x55\x04\x03"
+#define MBEDTLS_OID_CMP(oid_str, oid_buf)           (false)
+#define MBEDTLS_ASN1_IA5_STRING                     0x16
+#define MBEDTLS_ASN1_OID                            0x06
 
 typedef struct mbedtls_asn1_buf {
   int tag;
@@ -50,10 +58,6 @@ typedef int mbedtls_ssl_recv_timeout_t(void *ctx, unsigned char *buf, size_t len
 struct mbedtls_ssl_context {};
 struct mbedtls_ctr_drbg_context {};
 struct mbedtls_entropy_context {};
-struct mbedtls_ssl_config {
-  void* ca_chain;
-  void* key_cert;
-};
 struct rawStruct {
   const unsigned char *p;
   size_t len;
@@ -62,6 +66,12 @@ struct mbedtls_x509_crt {
   rawStruct raw;
   mbedtls_x509_sequence subject_alt_names;
   mbedtls_asn1_named_data subject;
+};
+struct mbedtls_ssl_config {
+  void* ca_chain;
+  void* key_cert;
+  mbedtls_x509_crt* actual_ca_chain;
+  mbedtls_x509_crt* actual_key_cert;
 };
 struct mbedtls_x509_crl {};
 struct mbedtls_pk_context {};
@@ -72,102 +82,348 @@ struct mbedtls_sha256_context {
   int is224;
 };
 
-const mbedtls_x509_crt dummy_cert = {
-    {NULL, 0},  // raw (rawStruct)
+const char* mock_cert_data = "MockCertificateData";
 
-    // subject_alt_names (mbedtls_x509_sequence)
-    {
-      {0, 0, NULL}, // buf (mbedtls_asn1_buf)
-      NULL         // next
-    },
+mbedtls_x509_crt dummy_cert = {
+  {reinterpret_cast<const unsigned char*>(mock_cert_data), strlen(mock_cert_data)},
 
-    // subject (mbedtls_asn1_named_data)
-    {
-      {0, 0, NULL}, // oid (mbedtls_asn1_buf)
-      {0, 0, NULL}, // val (mbedtls_asn1_buf)
-      NULL,         // next
-      0             // next_merged (unsigned char)
-    }
+  // subject_alt_names (mbedtls_x509_sequence)
+  {
+    {0, 0, NULL}, // buf (mbedtls_asn1_buf)
+    NULL         // next
+  },
+
+  // subject (mbedtls_asn1_named_data)
+  {
+    {0, 0, NULL}, // oid (mbedtls_asn1_buf)
+    {0, 0, NULL}, // val (mbedtls_asn1_buf)
+    NULL,         // next
+    0             // next_merged (unsigned char)
+  }
 };
 
-const mbedtls_x509_crt *mbedtls_ssl_get_peer_cert(const mbedtls_ssl_context *ssl) { return &dummy_cert; }
+std::string dName = "example.com";
+size_t len = dName.length();
+unsigned char* uchar_ptr = reinterpret_cast<unsigned char*>(&dName[0]);
 
-void mbedtls_ssl_init(mbedtls_ssl_context *ssl) {}
-void mbedtls_ssl_config_init(mbedtls_ssl_config *conf) {}
-void mbedtls_entropy_init(mbedtls_entropy_context *ctx) {}
-void mbedtls_ctr_drbg_init(mbedtls_ctr_drbg_context *ctx) {}
-void mbedtls_x509_crt_init(mbedtls_x509_crt *crt) {}
-void mbedtls_ssl_conf_authmode(mbedtls_ssl_config *conf, int authmode) {}
-void mbedtls_ssl_conf_ca_chain(mbedtls_ssl_config *conf, mbedtls_x509_crt *ca_chain, mbedtls_x509_crl *ca_crl) {}
-void mbedtls_pk_init(mbedtls_pk_context *ctx) {}
-void mbedtls_x509_crt_free(mbedtls_x509_crt *crt) {}
-void mbedtls_ssl_conf_rng(mbedtls_ssl_config *conf, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng) {}
-void mbedtls_ssl_set_bio( mbedtls_ssl_context *ssl, void *p_bio, mbedtls_ssl_send_t *f_send, mbedtls_ssl_recv_t *f_recv, mbedtls_ssl_recv_timeout_t *f_recv_timeout) {}
-void mbedtls_ssl_conf_read_timeout(mbedtls_ssl_config *conf, uint32_t timeout) {}
-void mbedtls_pk_free(mbedtls_pk_context *ctx) {}
-void mbedtls_ssl_free(mbedtls_ssl_context *ssl) {}
-void mbedtls_ssl_config_free(mbedtls_ssl_config *conf) {}
-void mbedtls_ctr_drbg_free(mbedtls_ctr_drbg_context *ctx) {}
-void mbedtls_entropy_free(mbedtls_entropy_context *ctx) {}
-void mbedtls_sha256_init(mbedtls_sha256_context *ctx) {}
-void mbedtls_sha256_starts(mbedtls_sha256_context *ctx, int is224) {}
-void mbedtls_sha256_update(mbedtls_sha256_context *ctx, const unsigned char *input, size_t ilen) {}
-void mbedtls_sha256_finish(mbedtls_sha256_context *ctx, unsigned char output[32]) {}
+mbedtls_asn1_buf example_com_buffer = {
+  MBEDTLS_ASN1_IA5_STRING,
+  len,
+  uchar_ptr
+};
 
-uint32_t mbedtls_ssl_get_verify_result(const mbedtls_ssl_context *ssl) { return (uint32_t)0; }
-size_t mbedtls_ssl_get_bytes_avail(const mbedtls_ssl_context *ssl) { return (size_t)0; }
+mbedtls_x509_sequence example_com_sequence = {
+  example_com_buffer,
+  NULL
+};
 
-int mbedtls_ctr_drbg_seed_returns = 0;
-int mbedtls_entropy_func_returns = 0;
-int mbedtls_ssl_config_defaults_returns = 0;
-int mbedtls_x509_crt_parse_returns = 0;
-int mbedtls_ssl_conf_psk_returns = 0;
-int mbedtls_pk_parse_key_returns = 0;
-int mbedtls_ssl_conf_own_cert_returns = 0;
-int mbedtls_ssl_set_hostname_returns = 0;
-int mbedtls_ctr_drbg_random_returns = 0;
-int mbedtls_ssl_setup_returns = 0;
-int mbedtls_ssl_handshake_returns = 0;
-int mbedtls_ssl_get_record_expansion_returns = 0;
-int mbedtls_x509_crt_verify_info_returns = 0;
-int mbedtls_ssl_read_returns = 0;
-int mbedtls_ssl_write_returns = 0;
+mbedtls_x509_crt dummy_cert_with_san = {
+  {reinterpret_cast<const unsigned char*>(mock_cert_data), strlen(mock_cert_data)},
+  example_com_sequence,
+  {
+    {0, 0, NULL},
+    {0, 0, NULL},
+    NULL,
+    0
+  }
+};
 
-void mbedtls_mock_reset_return_values() {
-  mbedtls_ctr_drbg_seed_returns = 0;
-  mbedtls_entropy_func_returns = 0;
-  mbedtls_ssl_config_defaults_returns = 0;
-  mbedtls_x509_crt_parse_returns = 0;
-  mbedtls_ssl_conf_psk_returns = 0;
-  mbedtls_pk_parse_key_returns = 0;
-  mbedtls_ssl_conf_own_cert_returns = 0;
-  mbedtls_ssl_set_hostname_returns = 0;
-  mbedtls_ctr_drbg_random_returns = 0;
-  mbedtls_ssl_setup_returns = 0;
-  mbedtls_ssl_handshake_returns = 0;
-  mbedtls_ssl_get_record_expansion_returns = 0;
-  mbedtls_x509_crt_verify_info_returns = 0;
-  mbedtls_ssl_read_returns = 0;
-  mbedtls_ssl_write_returns = 0;
+mbedtls_x509_crt dummy_cert_with_cn = {
+  {reinterpret_cast<const unsigned char*>(mock_cert_data), strlen(mock_cert_data)},
+  {
+    {0, 0, NULL},
+    NULL
+  },
+  {
+    {MBEDTLS_ASN1_OID, sizeof(MBEDTLS_OID_AT_CN) - 1, const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(MBEDTLS_OID_AT_CN))},
+    {MBEDTLS_ASN1_IA5_STRING, strlen("example.com"), const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>("example.com"))},
+    NULL,
+    0
+  }
+};
+
+mbedtls_x509_crt dummy_cert_without_match = {
+  {reinterpret_cast<const unsigned char*>(mock_cert_data), strlen(mock_cert_data)},
+  {
+    {strlen("notexample.com"), MBEDTLS_ASN1_IA5_STRING, const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>("notexample.com"))},
+    NULL
+  },
+  {
+    {sizeof(MBEDTLS_OID_AT_CN) - 1, MBEDTLS_ASN1_OID, const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(MBEDTLS_OID_AT_CN))},
+    {strlen("notexample.com"), MBEDTLS_ASN1_IA5_STRING, const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>("notexample.com"))},
+    NULL,
+    0
+  }
+};
+
+// Const removed from mbedtls_ssl_get_peer_cert for mocking - const mbedtls_x509_crt *
+FunctionEmulator mbedtls_ssl_get_peer_cert_stub("mbedtls_ssl_get_peer_cert");
+mbedtls_x509_crt *mbedtls_ssl_get_peer_cert(const mbedtls_ssl_context *ssl) {
+  mbedtls_ssl_get_peer_cert_stub.recordFunctionCall();
+  return mbedtls_ssl_get_peer_cert_stub.mock<mbedtls_x509_crt*>("mbedtls_ssl_get_peer_cert");
 }
 
-int mbedtls_ctr_drbg_seed(mbedtls_ctr_drbg_context *ctx, int (*f_entropy)(void *, unsigned char *, size_t), void *p_entropy, const unsigned char *custom, size_t len) { return mbedtls_ctr_drbg_seed_returns; }
-int mbedtls_entropy_func(void *data, unsigned char *output, size_t len) { return mbedtls_entropy_func_returns; }
-int mbedtls_ssl_config_defaults(mbedtls_ssl_config *conf, int endpoint, int transport, int preset) { return mbedtls_ssl_config_defaults_returns; }
-int mbedtls_x509_crt_parse(mbedtls_x509_crt *chain, const unsigned char *buf, size_t buflen) { return mbedtls_x509_crt_parse_returns; }
-int mbedtls_ssl_conf_psk(mbedtls_ssl_config *conf, const unsigned char *psk, size_t psk_len, const unsigned char *psk_identity, size_t psk_identity_len) { return mbedtls_ssl_conf_psk_returns; }
-int mbedtls_pk_parse_key(mbedtls_pk_context *pk, const unsigned char *key, size_t keylen, const unsigned char *pwd, size_t pwdlen) { return mbedtls_pk_parse_key_returns; }
-int mbedtls_ssl_conf_own_cert(mbedtls_ssl_config *conf, mbedtls_x509_crt *own_cert, mbedtls_pk_context *pk_key) { return mbedtls_ssl_conf_own_cert_returns; }
-int mbedtls_ssl_set_hostname(mbedtls_ssl_context *ssl, const char *hostname) { return mbedtls_ssl_set_hostname_returns; }
-int mbedtls_ctr_drbg_random(void *p_rng, unsigned char *output, size_t output_len) { return mbedtls_ctr_drbg_random_returns; }
-int mbedtls_ssl_setup(mbedtls_ssl_context *ssl, const mbedtls_ssl_config *conf) { return mbedtls_ssl_setup_returns; }
-int mbedtls_ssl_handshake(mbedtls_ssl_context *ssl) { return mbedtls_ssl_handshake_returns; }
-int mbedtls_ssl_get_record_expansion(const mbedtls_ssl_context *ssl) { return mbedtls_ssl_get_record_expansion_returns; }
-int mbedtls_x509_crt_verify_info(char *buf, size_t size, const char *prefix, uint32_t flags) { return mbedtls_x509_crt_verify_info_returns; }
-int mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t len) { return mbedtls_ssl_read_returns; }
-int mbedtls_ssl_write(mbedtls_ssl_context *ssl, const unsigned char *buf, size_t len) { return mbedtls_ssl_write_returns; }
+FunctionEmulator mbedtls_ssl_init_stub("mbedtls_ssl_init");
+void mbedtls_ssl_init(mbedtls_ssl_context *ssl) {
+  mbedtls_ssl_init_stub.recordFunctionCall();
+}
 
-const char *mbedtls_ssl_get_version(const mbedtls_ssl_context *ssl) { return (const char*)""; }
-const char *mbedtls_ssl_get_ciphersuite(const mbedtls_ssl_context *ssl) { return (const char*)""; }
+FunctionEmulator mbedtls_ssl_config_init_stub("mbedtls_ssl_config_init");
+void mbedtls_ssl_config_init(mbedtls_ssl_config *conf) {
+  mbedtls_ssl_config_init_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_entropy_init_stub("mbedtls_entropy_init");
+void mbedtls_entropy_init(mbedtls_entropy_context *ctx) {
+  mbedtls_entropy_init_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ctr_drbg_init_stub("mbedtls_ctr_drbg_init");
+void mbedtls_ctr_drbg_init(mbedtls_ctr_drbg_context *ctx) {
+  mbedtls_ctr_drbg_init_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_x509_crt_init_stub("mbedtls_x509_crt_init");
+void mbedtls_x509_crt_init(mbedtls_x509_crt *crt) {
+  mbedtls_x509_crt_init_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ssl_conf_authmode_stub("mbedtls_ssl_conf_authmode");
+void mbedtls_ssl_conf_authmode(mbedtls_ssl_config *conf, int authmode) {
+  mbedtls_ssl_conf_authmode_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ssl_conf_ca_chain_stub("mbedtls_ssl_conf_ca_chain");
+void mbedtls_ssl_conf_ca_chain(mbedtls_ssl_config *conf, mbedtls_x509_crt *ca_chain, mbedtls_x509_crl *ca_crl) {
+  mbedtls_ssl_conf_ca_chain_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_pk_init_stub("mbedtls_pk_init");
+void mbedtls_pk_init(mbedtls_pk_context *ctx) {
+  mbedtls_pk_init_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_x509_crt_free_stub("mbedtls_x509_crt_free");
+void mbedtls_x509_crt_free(mbedtls_x509_crt *crt) {
+  mbedtls_x509_crt_free_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ssl_conf_rng_stub("mbedtls_ssl_conf_rng");
+void mbedtls_ssl_conf_rng(mbedtls_ssl_config *conf, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng) {
+  mbedtls_ssl_conf_rng_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ssl_set_bio_stub("mbedtls_ssl_set_bio");
+void mbedtls_ssl_set_bio( mbedtls_ssl_context *ssl, void *p_bio, mbedtls_ssl_send_t *f_send, mbedtls_ssl_recv_t *f_recv, mbedtls_ssl_recv_timeout_t *f_recv_timeout) {
+  mbedtls_ssl_set_bio_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ssl_conf_read_timeout_stub("mbedtls_ssl_conf_read_timeout");
+void mbedtls_ssl_conf_read_timeout(mbedtls_ssl_config *conf, uint32_t timeout) {
+  mbedtls_ssl_conf_read_timeout_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_pk_free_stub("mbedtls_pk_free");
+void mbedtls_pk_free(mbedtls_pk_context *ctx) {
+  mbedtls_pk_free_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ssl_free_stub("mbedtls_ssl_free");
+void mbedtls_ssl_free(mbedtls_ssl_context *ssl) {
+  mbedtls_ssl_free_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ssl_config_free_stub("mbedtls_ssl_config_free");
+void mbedtls_ssl_config_free(mbedtls_ssl_config *conf) {
+  mbedtls_ssl_config_free_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ctr_drbg_free_stub("mbedtls_ctr_drbg_free");
+void mbedtls_ctr_drbg_free(mbedtls_ctr_drbg_context *ctx) {
+  mbedtls_ctr_drbg_free_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_entropy_free_stub("mbedtls_entropy_free");
+void mbedtls_entropy_free(mbedtls_entropy_context *ctx) {
+  mbedtls_entropy_free_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_sha256_init_stub("mbedtls_sha256_init");
+void mbedtls_sha256_init(mbedtls_sha256_context *ctx) {
+  mbedtls_sha256_init_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_sha256_starts_stub("mbedtls_sha256_starts");
+void mbedtls_sha256_starts(mbedtls_sha256_context *ctx, int is224) {
+  mbedtls_sha256_starts_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_sha256_update_stub("mbedtls_sha256_update");
+void mbedtls_sha256_update(mbedtls_sha256_context *ctx, const unsigned char *input, size_t ilen) {
+  mbedtls_sha256_update_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_sha256_finish_stub("mbedtls_sha256_finish");
+void mbedtls_sha256_finish(mbedtls_sha256_context *ctx, unsigned char output[32]) {
+  mbedtls_sha256_finish_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_ssl_get_verify_result_stub("mbedtls_ssl_get_verify_result");
+uint32_t mbedtls_ssl_get_verify_result(const mbedtls_ssl_context *ssl) { 
+  mbedtls_ssl_get_verify_result_stub.recordFunctionCall();
+  return mbedtls_ssl_get_verify_result_stub.mock<uint32_t>("mbedtls_ssl_get_verify_result");
+}
+
+FunctionEmulator mbedtls_ssl_get_bytes_avail_stub("mbedtls_ssl_get_bytes_avail");
+size_t mbedtls_ssl_get_bytes_avail(const mbedtls_ssl_context *ssl) { 
+  mbedtls_ssl_get_bytes_avail_stub.recordFunctionCall();
+  return mbedtls_ssl_get_bytes_avail_stub.mock<size_t>("mbedtls_ssl_get_bytes_avail");
+}
+
+FunctionEmulator mbedtls_ctr_drbg_seed_stub("mbedtls_ctr_drbg_seed");
+int mbedtls_ctr_drbg_seed(mbedtls_ctr_drbg_context *ctx, int (*f_entropy)(void *, unsigned char *, size_t), void *p_entropy, const unsigned char *custom, size_t len) { 
+  mbedtls_ctr_drbg_seed_stub.recordFunctionCall();
+  return mbedtls_ctr_drbg_seed_stub.mock<int>("mbedtls_ctr_drbg_seed");
+}
+
+FunctionEmulator mbedtls_entropy_func_stub("mbedtls_entropy_func");
+int mbedtls_entropy_func(void *data, unsigned char *output, size_t len) {
+  mbedtls_entropy_func_stub.recordFunctionCall();
+  return mbedtls_entropy_func_stub.mock<int>("mbedtls_entropy_func");
+}
+
+FunctionEmulator mbedtls_ssl_config_defaults_stub("mbedtls_ssl_config_defaults");
+int mbedtls_ssl_config_defaults(mbedtls_ssl_config *conf, int endpoint, int transport, int preset) {
+  mbedtls_ssl_config_defaults_stub.recordFunctionCall();
+  return mbedtls_ssl_config_defaults_stub.mock<int>("mbedtls_ssl_config_defaults");
+}
+
+FunctionEmulator mbedtls_x509_crt_parse_stub("mbedtls_x509_crt_parse");
+int mbedtls_x509_crt_parse(mbedtls_x509_crt *chain, const unsigned char *buf, size_t buflen) {
+  mbedtls_x509_crt_parse_stub.recordFunctionCall();
+  return mbedtls_x509_crt_parse_stub.mock<int>("mbedtls_x509_crt_parse");
+}
+
+FunctionEmulator mbedtls_ssl_conf_psk_stub("mbedtls_ssl_conf_psk");
+int mbedtls_ssl_conf_psk(mbedtls_ssl_config *conf, const unsigned char *psk, size_t psk_len, const unsigned char *psk_identity, size_t psk_identity_len) {
+  mbedtls_ssl_conf_psk_stub.recordFunctionCall();
+  return mbedtls_ssl_conf_psk_stub.mock<int>("mbedtls_ssl_conf_psk");
+}
+
+FunctionEmulator mbedtls_pk_parse_key_stub("mbedtls_pk_parse_key");
+int mbedtls_pk_parse_key(mbedtls_pk_context *pk, const unsigned char *key, size_t keylen, const unsigned char *pwd, size_t pwdlen) {
+  mbedtls_pk_parse_key_stub.recordFunctionCall();
+  return mbedtls_pk_parse_key_stub.mock<int>("mbedtls_pk_parse_key");
+}
+
+FunctionEmulator mbedtls_ssl_conf_own_cert_stub("mbedtls_ssl_conf_own_cert");
+int mbedtls_ssl_conf_own_cert(mbedtls_ssl_config *conf, mbedtls_x509_crt *own_cert, mbedtls_pk_context *pk_key) {
+  mbedtls_ssl_conf_own_cert_stub.recordFunctionCall();
+  return mbedtls_ssl_conf_own_cert_stub.mock<int>("mbedtls_ssl_conf_own_cert");
+}
+
+FunctionEmulator mbedtls_ssl_set_hostname_stub("mbedtls_ssl_set_hostname");
+int mbedtls_ssl_set_hostname(mbedtls_ssl_context *ssl, const char *hostname) {
+  mbedtls_ssl_set_hostname_stub.recordFunctionCall();
+  return mbedtls_ssl_set_hostname_stub.mock<int>("mbedtls_ssl_set_hostname");
+}
+
+FunctionEmulator mbedtls_ctr_drbg_random_stub("mbedtls_ctr_drbg_random");
+int mbedtls_ctr_drbg_random(void *p_rng, unsigned char *output, size_t output_len) {
+  mbedtls_ctr_drbg_random_stub.recordFunctionCall();
+  return mbedtls_ctr_drbg_random_stub.mock<int>("mbedtls_ctr_drbg_random");
+}
+
+FunctionEmulator mbedtls_ssl_setup_stub("mbedtls_ssl_setup");
+int mbedtls_ssl_setup(mbedtls_ssl_context *ssl, const mbedtls_ssl_config *conf) {
+  mbedtls_ssl_setup_stub.recordFunctionCall();
+  return mbedtls_ssl_setup_stub.mock<int>("mbedtls_ssl_setup");
+}
+
+FunctionEmulator mbedtls_ssl_handshake_stub("mbedtls_ssl_handshake");
+int mbedtls_ssl_handshake(mbedtls_ssl_context *ssl) {
+  mbedtls_ssl_handshake_stub.recordFunctionCall();
+  return mbedtls_ssl_handshake_stub.mock<int>("mbedtls_ssl_handshake");
+}
+
+FunctionEmulator mbedtls_ssl_get_record_expansion_stub("mbedtls_ssl_get_record_expansion");
+int mbedtls_ssl_get_record_expansion(const mbedtls_ssl_context *ssl) {
+  mbedtls_ssl_get_record_expansion_stub.recordFunctionCall();
+  return mbedtls_ssl_get_record_expansion_stub.mock<int>("mbedtls_ssl_get_record_expansion");
+}
+
+FunctionEmulator mbedtls_x509_crt_verify_info_stub("mbedtls_x509_crt_verify_info");
+int mbedtls_x509_crt_verify_info(char *buf, size_t size, const char *prefix, uint32_t flags) {
+  mbedtls_x509_crt_verify_info_stub.recordFunctionCall();
+  return mbedtls_x509_crt_verify_info_stub.mock<int>("mbedtls_x509_crt_verify_info");
+}
+
+FunctionEmulator mbedtls_ssl_read_stub("mbedtls_ssl_read");
+int mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t len) {
+  mbedtls_ssl_read_stub.recordFunctionCall();
+  return mbedtls_ssl_read_stub.mock<int>("mbedtls_ssl_read");
+}
+
+FunctionEmulator mbedtls_ssl_write_stub("mbedtls_ssl_write");
+int mbedtls_ssl_write(mbedtls_ssl_context *ssl, const unsigned char *buf, size_t len) {
+  mbedtls_ssl_write_stub.recordFunctionCall();
+  return mbedtls_ssl_write_stub.mock<int>("mbedtls_ssl_write");
+}
+
+FunctionEmulator mbedtls_ssl_get_version_stub("mbedtls_ssl_get_version");
+const char *mbedtls_ssl_get_version(const mbedtls_ssl_context *ssl) {
+  mbedtls_ssl_get_version_stub.recordFunctionCall();
+  return mbedtls_ssl_get_version_stub.mock<const char*>("mbedtls_ssl_get_version");
+}
+
+FunctionEmulator mbedtls_ssl_get_ciphersuite_stub("mbedtls_ssl_get_ciphersuite");
+const char *mbedtls_ssl_get_ciphersuite(const mbedtls_ssl_context *ssl) {
+  mbedtls_ssl_get_ciphersuite_stub.recordFunctionCall();
+  return mbedtls_ssl_get_ciphersuite_stub.mock<const char*>("mbedtls_ssl_get_ciphersuite");
+}
+
+void mbedtls_mock_reset_return_values() {
+  mbedtls_ssl_get_peer_cert_stub.reset();
+  mbedtls_ssl_init_stub.reset();
+  mbedtls_ssl_config_init_stub.reset();
+  mbedtls_entropy_init_stub.reset();
+  mbedtls_ctr_drbg_init_stub.reset();
+  mbedtls_x509_crt_init_stub.reset();
+  mbedtls_ssl_conf_authmode_stub.reset();
+  mbedtls_ssl_conf_ca_chain_stub.reset();
+  mbedtls_pk_init_stub.reset();
+  mbedtls_x509_crt_free_stub.reset();
+  mbedtls_ssl_conf_rng_stub.reset();
+  mbedtls_ssl_set_bio_stub.reset();
+  mbedtls_ssl_conf_read_timeout_stub.reset();
+  mbedtls_pk_free_stub.reset();
+  mbedtls_ssl_free_stub.reset();
+  mbedtls_ssl_config_free_stub.reset();
+  mbedtls_ctr_drbg_free_stub.reset();
+  mbedtls_entropy_free_stub.reset();
+  mbedtls_sha256_init_stub.reset();
+  mbedtls_sha256_starts_stub.reset();
+  mbedtls_sha256_update_stub.reset();
+  mbedtls_sha256_finish_stub.reset();
+  mbedtls_ssl_get_verify_result_stub.reset();
+  mbedtls_ssl_get_bytes_avail_stub.reset();
+  mbedtls_ctr_drbg_seed_stub.reset();
+  mbedtls_entropy_func_stub.reset();
+  mbedtls_ssl_config_defaults_stub.reset();
+  mbedtls_x509_crt_parse_stub.reset();
+  mbedtls_ssl_conf_psk_stub.reset();
+  mbedtls_pk_parse_key_stub.reset();
+  mbedtls_ssl_conf_own_cert_stub.reset();
+  mbedtls_ssl_set_hostname_stub.reset();
+  mbedtls_ctr_drbg_random_stub.reset();
+  mbedtls_ssl_setup_stub.reset();
+  mbedtls_ssl_handshake_stub.reset();
+  mbedtls_ssl_get_record_expansion_stub.reset();
+  mbedtls_x509_crt_verify_info_stub.reset();
+  mbedtls_ssl_read_stub.reset();
+  mbedtls_ssl_write_stub.reset();
+  mbedtls_ssl_get_version_stub.reset();
+  mbedtls_ssl_get_ciphersuite_stub.reset();
+}
 
 #endif // MBEDTLS_MOCK_H

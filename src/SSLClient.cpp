@@ -87,13 +87,13 @@ SSLClient::~SSLClient() {
 void SSLClient::stop() {
   if (sslclient->client != nullptr) {
     if (sslclient->client >= 0) {
-      log_i("Stopping ssl client");
+      log_d("Stopping ssl client");
       stop_ssl_socket(sslclient, _CA_cert, _cert, _private_key);
     } else {
-      log_i("stop() not called because client is < 0");
+      log_d("stop() not called because client is < 0");
     }
   } else {
-    log_i("stop() not called because client is nullptr");
+    log_d("stop() not called because client is nullptr");
   }
   _connected = false;
   _peek = -1;
@@ -277,7 +277,7 @@ int SSLClient::connect(IPAddress ip, uint16_t port, const char *pskIdent, const 
 int SSLClient::connect(const char *host, uint16_t port, const char *pskIdent, const char *psKey) {
   log_v("start_ssl_client with PSK");
 
-  if(_timeout > 0){
+  if (_timeout > 0) {
     sslclient->handshake_timeout = _timeout;
   }
 
@@ -366,12 +366,15 @@ size_t SSLClient::write(uint8_t data) {
  */
 size_t SSLClient::write(const uint8_t *buf, size_t size) {
   if (!_connected) {
+    log_w("SSLClient is not connected.");
     return 0;
   }
 
+  log_d("Sending data to SSL connection...");
   int res = send_ssl_data(sslclient, buf, size);
   
   if (res < 0) {
+    log_e("Error sending data to SSL connection. Stopping SSLClient...");
     stop();
     res = 0;
   }

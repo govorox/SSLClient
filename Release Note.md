@@ -8,3 +8,4 @@ SSL Client Updates:
 6. Fix issue where client read timeout value not being set, Commit: 59ae9f0
 7. Add clarity to return values for start_ssl_client and fix early termination of ssl client, Commit: cc40266
 8. Close issue [#30](https://github.com/govorox/SSLClient/issues/30), Commit: e426936
+9. Separate concerns from start_ssl_client into singly responsible functions and unit test private API, commit: 0f1fa36
