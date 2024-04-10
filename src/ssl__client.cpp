@@ -19,7 +19,7 @@
 #  error "Please configure IDF framework to include mbedTLS -> Enable pre-shared-key ciphersuites and activate at least one cipher"
 #endif
 
-const char *pers = "esp32-tls";
+const char *persy = "esp32-tls";
 
 /**
  * \brief           Handle the error.
@@ -404,7 +404,7 @@ int seed_random_number_generator(sslclient__context *ssl_client) {
   mbedtls_entropy_init(&ssl_client->entropy_ctx);
   log_v("Entropy context initialized");
   int ret = mbedtls_ctr_drbg_seed(&ssl_client->drbg_ctx, mbedtls_entropy_func,
-                               &ssl_client->entropy_ctx, (const unsigned char *) pers, strlen(pers));
+                               &ssl_client->entropy_ctx, (const unsigned char *) persy, strlen(persy));
   return ret;
 }
 
