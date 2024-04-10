@@ -31,7 +31,7 @@
  */
 SSLClient::SSLClient() {
   _connected = false;
-  sslclient = new sslclient_context;
+  sslclient = new sslclient__context;
   ssl_init(sslclient, nullptr);
   sslclient->handshake_timeout = 120000;
   _CA_cert = NULL;
@@ -52,7 +52,7 @@ SSLClient::SSLClient() {
  */
 SSLClient::SSLClient(Client* client) {
   _connected = false;
-  sslclient = new sslclient_context;
+  sslclient = new sslclient__context;
   ssl_init(sslclient, client);
   sslclient->handshake_timeout = 120000;
   _CA_cert = NULL;

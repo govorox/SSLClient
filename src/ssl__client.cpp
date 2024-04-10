@@ -10,7 +10,7 @@
 #include "Arduino.h"
 #include <algorithm>
 #include <string>
-#include "ssl_client.h"
+#include "ssl__client.h"
 
 //#define ARDUHAL_LOG_LEVEL 5
 //#include <esp32-hal-log.h>
@@ -197,15 +197,15 @@ static int client_net_send(void *ctx, const unsigned char *buf, size_t len) {
 }
 
 /**
- * \brief             Initialize the sslclient_context struct.
+ * \brief             Initialize the sslclient__context struct.
  * 
- * \param ssl_client  sslclient_context* - The ssl client context. 
+ * \param ssl_client  sslclient__context* - The ssl client context. 
  * \param client      Client* - The client. 
  */
-void ssl_init(sslclient_context *ssl_client, Client *client) {
+void ssl_init(sslclient__context *ssl_client, Client *client) {
   log_d("Init SSL");
   // reset embedded pointers to zero
-  memset(ssl_client, 0, sizeof(sslclient_context));
+  memset(ssl_client, 0, sizeof(sslclient__context));
   ssl_client->client = client;
   mbedtls_ssl_init(&ssl_client->ssl_ctx);
   mbedtls_ssl_config_init(&ssl_client->ssl_conf);
@@ -225,7 +225,7 @@ void ssl_init(sslclient_context *ssl_client, Client *client) {
  * \param cli_key Pointer to the client key.
  */
 void cleanup(
-  sslclient_context *ssl_client,
+  sslclient__context *ssl_client,
   bool ca_cert_initialized,
   bool client_cert_initialized,
   bool client_key_initialized,
@@ -278,7 +278,7 @@ void log_failed_cert(int flags) {
  * \return 1 on successful SSL client start, 0 otherwise.
  */
 int start_ssl_client(
-  sslclient_context *ssl_client,
+  sslclient__context *ssl_client,
   const char *host,
   uint32_t port,
   int timeout,
@@ -357,7 +357,7 @@ int start_ssl_client(
 /**
  * \brief             Initializes a TCP connection to a remote host on the specified port.
  *
- * \param ssl_client  sslclient_context* - The SSL client context.
+ * \param ssl_client  sslclient__context* - The SSL client context.
  * \param host        const char* - The host to connect to.
  * \param port        uint32_t - The port to connect to.
  *
@@ -369,7 +369,7 @@ int start_ssl_client(
  * SSL client context. It checks if the Client pointer within the context is valid, attempts to
  * establish the TCP connection, and returns appropriate error codes if any issues are encountered.
  */
-int init_tcp_connection(sslclient_context *ssl_client, const char *host, uint32_t port) {
+int init_tcp_connection(sslclient__context *ssl_client, const char *host, uint32_t port) {
   Client *pClient = ssl_client->client;
   if (!pClient) {
     log_e("Client pointer is null.");
@@ -389,7 +389,7 @@ int init_tcp_connection(sslclient_context *ssl_client, const char *host, uint32_
 /**
  * \brief Seed the random number generator for SSL/TLS operations.
  *
- * \param ssl_client  sslclient_context* - The SSL client context.
+ * \param ssl_client  sslclient__context* - The SSL client context.
  *
  * \return int        0 if the random number generator is successfully seeded.
  * \return int        An error code if the seeding process fails.
@@ -399,7 +399,7 @@ int init_tcp_connection(sslclient_context *ssl_client, const char *host, uint32_
  * The DRBG is essential for generating secure cryptographic keys and nonces during SSL/TLS
  * communication. If successful, the function returns 0; otherwise, it returns an error code.
  */
-int seed_random_number_generator(sslclient_context *ssl_client) {
+int seed_random_number_generator(sslclient__context *ssl_client) {
   log_v("Seeding the random number generator");
   mbedtls_entropy_init(&ssl_client->entropy_ctx);
   log_v("Entropy context initialized");
@@ -411,7 +411,7 @@ int seed_random_number_generator(sslclient_context *ssl_client) {
 /**
  * \brief Set up SSL/TLS configuration with default settings.
  *
- * \param ssl_client  sslclient_context* - The SSL client context.
+ * \param ssl_client  sslclient__context* - The SSL client context.
  *
  * \return int        0 if SSL/TLS configuration is successfully set up with defaults.
  * \return int        An error code if the setup process fails.
@@ -421,7 +421,7 @@ int seed_random_number_generator(sslclient_context *ssl_client) {
  * The SSL/TLS configuration is essential for establishing secure communication over the network.
  * If successful, the function returns 0; otherwise, it returns an error code.
  */
-int set_up_tls_defaults(sslclient_context *ssl_client) {
+int set_up_tls_defaults(sslclient__context *ssl_client) {
   log_v("Setting up the SSL/TLS defaults...");
 
   int ret = mbedtls_ssl_config_defaults(&ssl_client->ssl_conf, MBEDTLS_SSL_IS_CLIENT,
@@ -432,7 +432,7 @@ int set_up_tls_defaults(sslclient_context *ssl_client) {
 /**
  * \brief Configure SSL/TLS authentication options based on provided parameters.
  *
- * \param ssl_client       sslclient_context* - The SSL client context.
+ * \param ssl_client       sslclient__context* - The SSL client context.
  * \param rootCABuff       const char* - The root CA certificate buffer.
  * \param ca_cert_initialized bool* - Indicates whether CA certificate is initialized.
  * \param pskIdent         const char* - The PSK identity.
@@ -449,7 +449,7 @@ int set_up_tls_defaults(sslclient_context *ssl_client) {
  * no verification. The function may modify the value pointed to by `func_ret` to indicate errors.
  * If successful, the function returns 0; otherwise, it returns an error code, -1 for a null context.
  */
-int auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized,
+int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized,
                       const char *pskIdent, const char *psKey) {
   if (ssl_client == nullptr) {
     log_e("Uninitialised context!");
@@ -536,7 +536,7 @@ int auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, boo
  *         Positive error codes indicate number of certs that failed.
  *         Negative error codes indicate a PEM or x509 error.
  */
-int auth_client_cert_key(sslclient_context *ssl_client, const char *cli_cert, const char *cli_key, bool *client_cert_initialized, bool *client_key_initialized) {
+int auth_client_cert_key(sslclient__context *ssl_client, const char *cli_cert, const char *cli_key, bool *client_cert_initialized, bool *client_key_initialized) {
   int ret = 0;
   // Step 4 route b - Set up required auth mode cli_cert and cli_key
   if (cli_cert != NULL && cli_key != NULL) {
@@ -575,7 +575,7 @@ int auth_client_cert_key(sslclient_context *ssl_client, const char *cli_cert, co
  * with the hostname and sets up the SSL context with the necessary 
  * configurations.
  * 
- * \param ssl_client A pointer to the sslclient_context structure 
+ * \param ssl_client A pointer to the sslclient__context structure 
  *        representing the SSL client context.
  * \param host A pointer to a character string representing the hostname.
  * 
@@ -588,7 +588,7 @@ int auth_client_cert_key(sslclient_context *ssl_client, const char *cli_cert, co
  * 
  * Usage:
  * \code
- *      sslclient_context ssl_client;
+ *      sslclient__context ssl_client;
  *      const char *host = "example.com";
  *      int ret = set_hostname_for_tls(&ssl_client, host);
  *      if(ret != 0) {
@@ -596,7 +596,7 @@ int auth_client_cert_key(sslclient_context *ssl_client, const char *cli_cert, co
  *      }
  * \endcode
  */
-int set_hostname_for_tls(sslclient_context *ssl_client, const char *host) {
+int set_hostname_for_tls(sslclient__context *ssl_client, const char *host) {
   int ret;
   log_v("Setting hostname for TLS session...");
 
@@ -621,14 +621,14 @@ int set_hostname_for_tls(sslclient_context *ssl_client, const char *host) {
  * This function sets up the IO callbacks for sending, receiving, and receiving with timeout 
  * for the provided SSL client context. It also configures the read timeout for the SSL client context.
  *
- * \param ssl_client A pointer to the sslclient_context structure representing the SSL client context.
+ * \param ssl_client A pointer to the sslclient__context structure representing the SSL client context.
  * \param timeout The timeout value in milliseconds for reading operations.
  *
  * \return int Returns 0 on success, -1 
  *
  * Usage:
  * \code
- *      sslclient_context ssl_client;
+ *      sslclient__context ssl_client;
  *      int timeout = 5000;  // 5 seconds
  *      int ret = set_io_callbacks_and_timeout(&ssl_client, timeout);
  *      if (ret != 0) {
@@ -636,10 +636,10 @@ int set_hostname_for_tls(sslclient_context *ssl_client, const char *host) {
  *      }
  * \endcode
  *
- * \note The function assumes that the sslclient_context structure is properly initialized and the 
+ * \note The function assumes that the sslclient__context structure is properly initialized and the 
  *       client_net_send, client_net_recv, and client_net_recv_timeout functions are correctly implemented.
  */
-int set_io_callbacks_and_timeout(sslclient_context *ssl_client, int timeout) {
+int set_io_callbacks_and_timeout(sslclient__context *ssl_client, int timeout) {
   if (ssl_client == nullptr) {
     log_e("Uninitialised context!");
     return -1;
@@ -665,7 +665,7 @@ int set_io_callbacks_and_timeout(sslclient_context *ssl_client, int timeout) {
  * This function initiates and manages the SSL/TLS handshake process. It also checks for 
  * timeout conditions and handles client certificate and key if provided.
  * 
- * \param ssl_client A pointer to the sslclient_context structure representing the SSL client context.
+ * \param ssl_client A pointer to the sslclient__context structure representing the SSL client context.
  * \param func_ret A pointer to an integer where a specific error code can be stored for further analysis.
  * \param cli_cert A pointer to a character string representing the client's certificate. If not needed, pass NULL.
  * \param cli_key A pointer to a character string representing the client's private key. If not needed, pass NULL.
@@ -675,7 +675,7 @@ int set_io_callbacks_and_timeout(sslclient_context *ssl_client, int timeout) {
  *
  * Usage:
  * \code
- *      sslclient_context ssl_client;
+ *      sslclient__context ssl_client;
  *      int func_ret = 0;
  *      const char *cli_cert = "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----";
  *      const char *cli_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----";
@@ -685,10 +685,10 @@ int set_io_callbacks_and_timeout(sslclient_context *ssl_client, int timeout) {
  *      }
  * \endcode
  *
- * \note This function assumes that the sslclient_context structure is properly initialized and the 
+ * \note This function assumes that the sslclient__context structure is properly initialized and the 
  *       mbedtls libraries are correctly configured.
  */
-int perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, const char *cli_key) { 
+int perform_ssl_handshake(sslclient__context *ssl_client, const char *cli_cert, const char *cli_key) { 
   if (ssl_client == nullptr) {
     log_e("Uninitialised context!");
     return -1;
@@ -741,7 +741,7 @@ int perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, c
  * The verification process checks the server certificate against the provided root CA. 
  * If client certificate and key are provided, they can be used for further verification or cleanup.
  *
- * \param ssl_client A pointer to the sslclient_context structure representing the SSL client context.
+ * \param ssl_client A pointer to the sslclient__context structure representing the SSL client context.
  * \param ret The return value of the mbedtls_ssl_handshake function.
  * \param rootCABuff A pointer to a character string containing the root CA certificate.
  * \param cli_cert A pointer to a character string representing the client's certificate. If not needed, pass NULL.
@@ -752,7 +752,7 @@ int perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, c
  *
  * Usage:
  * \code
- *      sslclient_context ssl_client;
+ *      sslclient__context ssl_client;
  *      const char *rootCABuff = "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----";
  *      const char *cli_cert = "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----";
  *      const char *cli_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----";
@@ -762,11 +762,11 @@ int perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, c
  *      }
  * \endcode
  *
- * \note This function assumes that the sslclient_context structure is properly initialized and the 
+ * \note This function assumes that the sslclient__context structure is properly initialized and the 
  *       mbedtls libraries are correctly configured. Also, ensure that the root CA certificate is correct 
  *       and corresponds to the CA that issued the server's certificate.
  */
-int verify_server_cert(sslclient_context *ssl_client) {
+int verify_server_cert(sslclient__context *ssl_client) {
   if (ssl_client == nullptr) {
     log_e("Uninitialised context!");
     return -1;
@@ -782,12 +782,12 @@ int verify_server_cert(sslclient_context *ssl_client) {
 /**
  * \brief             Stop the ssl socket.
  * 
- * \param ssl_client  sslclient_context* - The ssl client context. 
+ * \param ssl_client  sslclient__context* - The ssl client context. 
  * \param rootCABuff  const char* - The root CA certificate. 
  * \param cli_cert    const char* - The client certificate. 
  * \param cli_key     const char* - The client key. 
  */
-void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key) {
+void stop_ssl_socket(sslclient__context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key) {
   log_d("Cleaning SSL connection.");
   
   // Stop the client connection
@@ -831,10 +831,10 @@ void stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, cons
 /**
  * \brief             Check if there is data to read or not.
  * 
- * \param ssl_client  sslclient_context* - The ssl client context. 
+ * \param ssl_client  sslclient__context* - The ssl client context. 
  * \return int        The number of bytes to read. 
  */
-int data_to_read(sslclient_context *ssl_client) {
+int data_to_read(sslclient__context *ssl_client) {
   int ret, res;
   
   ret = mbedtls_ssl_read(&ssl_client->ssl_ctx, NULL, 0);
@@ -853,12 +853,12 @@ int data_to_read(sslclient_context *ssl_client) {
  /**
   * \brief              Send data to the ssl server. 
   * 
-  * \param ssl_client   sslclient_context* - The ssl client context. 
+  * \param ssl_client   sslclient__context* - The ssl client context. 
   * \param data         const uint8_t* - The data to send. 
   * \param len          size_t - The length of the data. 
   * \return int         The number of bytes sent. 
   */
-int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len) {
+int send_ssl_data(sslclient__context *ssl_client, const uint8_t *data, size_t len) {
   if(ssl_client != nullptr) {
     log_v("ssl_client->client: %p", (void *)ssl_client->client);
     log_v("ssl_client->handshake_timeout: %lu", ssl_client->handshake_timeout);
@@ -890,12 +890,12 @@ int send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len
 /**
  * \brief                 Get the ssl receive object.
  * 
- * \param ssl_client      sslclient_context* - The ssl client context. 
+ * \param ssl_client      sslclient__context* - The ssl client context. 
  * \param data            uint8_t* - The data to receive. 
  * \param length          int - The length of the data. 
  * \return size_t         The number of bytes received. 
  */
-int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, size_t length) {
+int get_ssl_receive(sslclient__context *ssl_client, uint8_t *data, size_t length) {
   log_v( "Reading SSL (%d bytes)", length);
   int ret = -1;
 
@@ -908,7 +908,7 @@ int get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, size_t length)
 /**
  * \brief           Get the ssl receive object with timeout.
  * 
- * \param pb        sslclient_context* - The ssl client context. 
+ * \param pb        sslclient__context* - The ssl client context. 
  * \param res       uint8_t* - The data to receive. 
  * \return bool     True if the data was received, false otherwise. 
  */
@@ -963,12 +963,12 @@ static bool match_name(const string& name, const string& domainName) {
 /**
  * \brief               Verifies certificate provided by the peer to match specified SHA256 fingerprint.
  * 
- * \param ssl_client    sslclient_context* - The ssl client context. 
+ * \param ssl_client    sslclient__context* - The ssl client context. 
  * \param fp            const char* - The SHA256 fingerprint. 
  * \param domain_name   const char* - The domain name. 
  * \return bool         True if the certificate matches the fingerprint, false otherwise. 
  */
-bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const char* domain_name) {
+bool verify_ssl_fingerprint(sslclient__context *ssl_client, const char* fp, const char* domain_name) {
   // Convert hex string to byte array
   uint8_t fingerprint_local[32];
   int len = strlen(fp);
@@ -1026,11 +1026,11 @@ bool verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const
 /**
  * \brief               Checks if peer certificate has specified domain in CN or SANs.
  * 
- * \param ssl_client    sslclient_context* - The ssl client context.
+ * \param ssl_client    sslclient__context* - The ssl client context.
  * \param domain_name   const char* - The domain name. 
  * \return bool         True if the certificate has the domain name, false otherwise.
  */
-bool verify_ssl_dn(sslclient_context *ssl_client, const char* domain_name)
+bool verify_ssl_dn(sslclient__context *ssl_client, const char* domain_name)
 {
   log_d("domain name: '%s'", (domain_name)?domain_name:"(null)");
   string domain_name_str(domain_name);

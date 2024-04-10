@@ -8,20 +8,20 @@
 
 #include "mocks/ESPClass.hpp"
 #include "mocks/TestClient.h"
-#include "ssl_client.cpp"
+#include "ssl__client.cpp"
 
 using namespace fakeit;
 
 TestClient testClient; // Mocked client
-sslclient_context *testContext; // Context for tests
+sslclient__context *testContext; // Context for tests
 
 /**
  * @brief Set the up stop ssl socket object for these tests.
  * 
- * @param ctx The sslclient_context to set up.
+ * @param ctx The sslclient__context to set up.
  * @param client The client to set up.
  */
-void setup_stop_ssl_socket(sslclient_context* ctx, Client* client) {
+void setup_stop_ssl_socket(sslclient__context* ctx, Client* client) {
   ctx->ssl_conf.actual_ca_chain = (mbedtls_x509_crt*) malloc(sizeof(mbedtls_x509_crt));
   ctx->ssl_conf.actual_key_cert = &dummy_cert;
   ctx->ssl_conf.ca_chain = ctx->ssl_conf.actual_ca_chain;
@@ -34,7 +34,7 @@ void setUp(void) {
   testClient.reset();
   testClient.returns("connected", (uint8_t)1);
   mbedtls_mock_reset_return_values();
-  testContext = new sslclient_context();
+  testContext = new sslclient__context();
 }
 
 void tearDown(void) {
@@ -481,7 +481,7 @@ void test_cleanup_with_all_resources_initialized_and_no_error(void) {
 
 void test_cleanup_with_some_resources_initialized_and_no_error(void) {
   // Arrange
-  sslclient_context ssl_client;
+  sslclient__context ssl_client;
   bool ca_cert_initialized = true;
   bool client_cert_initialized = false;
   bool client_key_initialized = true;
