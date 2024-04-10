@@ -16,16 +16,16 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef SSLClient_H
-#define SSLClient_H
+#ifndef SSLCLIENT_H
+#define SSLCLIENT_H
 #include "Arduino.h"
 #include "IPAddress.h"
-#include "ssl_client.h"
+#include "ssl__client.h"
 
 class SSLClient : public Client
 {
 protected:
-  sslclient_context *sslclient;
+  sslclient__context *sslclient;
 
   int _lastError = 0;
 	int _peek = -1;
