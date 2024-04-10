@@ -4,8 +4,8 @@
 
 <!-- [Arduino Libraries Log](https://downloads.arduino.cc/libraries/logs/github.com/govorox/SSLClient/) -->
 
-### Now updated on PlatformIO registry as digitaldragon/SSLClient@1.1.7
-### Updated on Arduino Libraries registry to digitaldragon/GovoroxSSLClient@1.1.7
+### Now updated on PlatformIO registry as digitaldragon/SSLClient@1.1.8
+### Updated on Arduino Libraries registry to digitaldragon/GovoroxSSLClient@1.1.8
 
 # SSLClient Arduino library using *mbedtls* functions
 The SSLClient class implements support for secure connections using TLS (SSL). It Provides a transparent SSL wrapper over existing transport object of a **Client** class.
