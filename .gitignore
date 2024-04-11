@@ -1,5 +1,5 @@
-.pio
+.pio/
+.vscode/
 lib/*
 test.log
-.vscode
 emulation.log
