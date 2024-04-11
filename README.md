@@ -1,10 +1,10 @@
-# SSLClient Arduino Library (Version 1.1.9)
+# SSLClient Arduino Library (Version 1.1.10)
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient)
 
 ![arduino-library-badge](https://www.ardu-badge.com/badge/GovoroxSSLClient.svg)
 
-#### Available on PlatformIO registry as digitaldragon/SSLClient@1.1.9
-#### Available on Arduino Libraries registry to digitaldragon/GovoroxSSLClient@1.1.9
+#### Available on PlatformIO registry as digitaldragon/SSLClient@1.1.10
+#### Available on Arduino Libraries registry to digitaldragon/GovoroxSSLClient@1.1.10
 
 ## Overview - SSLClient Arduino library using *mbedtls* functions
 The SSLClient class implements support for secure connections using TLS (SSL). It Provides a transparent SSL wrapper over existing transport object of a **Client** class.
@@ -23,7 +23,7 @@ Suitable for IoT applications, including AWS IoT.
 Install via the Arduino Library Manager or PlatformIO:
 
 Arduino IDE: Search for "SSLClient".
-PlatformIO: Add digitaldragon/SSLClient@1.1.7 to platformio.ini.
+PlatformIO: Add `digitaldragon/SSLClient@^1.1.10` to platformio.ini.
 
 ## Usage
 ### Basic Connection
@@ -41,8 +41,6 @@ SSLClient sslClient(&transport);
 
 ### AWS IoT Connectivity
 ```cpp
-cpp
-Copy code
 TinyGsmClient transport(modem);
 SSLClient secure(&transport);
 
