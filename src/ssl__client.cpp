@@ -120,10 +120,17 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
   unsigned long start = millis();
   unsigned long tms = start + timeout;
   
-  int pending = client->available();
-  while (pending < len && millis() < tms) {
-    delay(1);
-    pending = client->available();
+  do {
+    int pending = client->available();
+    if (pending < len && timeout > 0) {
+      vTaskDelay(pdMS_TO_TICKS(1));
+    } else {
+      break;
+    }
+  } while (millis() < tms);
+
+  if (millis() - start >= timeout) {
+    log_d("Timeout reached, this can be caused by a slow network or a slow client, check underlying client.");
   }
   
   int result = client->read(buf, len);
