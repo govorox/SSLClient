@@ -336,6 +336,7 @@ int start_ssl_client(
       break;
     }
     int flags = verify_server_cert(ssl_client); // Step 8 - Verify the server certificate
+    ret = flags;
     if (ret != 0) {
       log_failed_cert(flags);
     } else {
