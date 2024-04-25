@@ -204,7 +204,7 @@ void mbedtls_pk_init(mbedtls_pk_context *ctx) {
 }
 
 FunctionEmulator mbedtls_x509_crt_free_stub("mbedtls_x509_crt_free");
-void mbedtls_x509_crt_free(mbedtls_x509_crt *crt) {
+void   mbedtls_x509_crt_free(mbedtls_x509_crt *crt) {
   mbedtls_x509_crt_free_stub.recordFunctionCall();
 }
 
@@ -380,6 +380,12 @@ FunctionEmulator mbedtls_ssl_get_ciphersuite_stub("mbedtls_ssl_get_ciphersuite")
 const char *mbedtls_ssl_get_ciphersuite(const mbedtls_ssl_context *ssl) {
   mbedtls_ssl_get_ciphersuite_stub.recordFunctionCall();
   return mbedtls_ssl_get_ciphersuite_stub.mock<const char*>("mbedtls_ssl_get_ciphersuite");
+}
+
+FunctionEmulator mbedtls_ssl_conf_alpn_protocols_stub("mbedtls_ssl_conf_alpn_protocols");
+int mbedtls_ssl_conf_alpn_protocols(mbedtls_ssl_config *conf, const char **protos) {
+  mbedtls_ssl_conf_alpn_protocols_stub.recordFunctionCall();
+  return mbedtls_ssl_conf_alpn_protocols_stub.mock<int>("mbedtls_ssl_conf_alpn_protocols");
 }
 
 void mbedtls_mock_reset_return_values() {

@@ -34,11 +34,14 @@ SSLClient::SSLClient() {
   sslclient = new sslclient__context;
   ssl_init(sslclient, nullptr);
   sslclient->handshake_timeout = 120000;
+  _use_insecure = false;
   _CA_cert = NULL;
   _cert = NULL;
   _private_key = NULL;
   _pskIdent = NULL;
   _psKey = NULL;
+  _alpn_protos = NULL;
+  _use_ca_bundle = false;
 }
 
 /**
@@ -53,6 +56,7 @@ SSLClient::SSLClient() {
 SSLClient::SSLClient(Client* client) {
   _connected = false;
   sslclient = new sslclient__context;
+  _use_insecure = false;
   ssl_init(sslclient, client);
   sslclient->handshake_timeout = 120000;
   _CA_cert = NULL;
@@ -60,6 +64,8 @@ SSLClient::SSLClient(Client* client) {
   _private_key = NULL;
   _pskIdent = NULL;
   _psKey = NULL;
+  _alpn_protos = NULL;
+  _use_ca_bundle = false;
 }
 
 /**
@@ -227,7 +233,7 @@ int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, co
     log_v("Handshake timeout set to: %d", sslclient->handshake_timeout);
   }
 
-  int ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _cert, _private_key, NULL, NULL);
+  int ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _use_ca_bundle, _cert, _private_key, NULL, NULL, _use_insecure, _alpn_protos);
   _lastError = ret;
   log_v("Return value from start_ssl_client: %d", ret);
 
@@ -281,7 +287,7 @@ int SSLClient::connect(const char *host, uint16_t port, const char *pskIdent, co
     sslclient->handshake_timeout = _timeout;
   }
 
-  int ret = start_ssl_client(sslclient, host, port, _timeout, NULL, NULL, NULL, _pskIdent, _psKey);
+  int ret = start_ssl_client(sslclient, host, port, _timeout, NULL, flase, NULL, NULL, _pskIdent, _psKey, _use_insecure, _alpn_protos);
   _lastError = ret;
 
   if (ret < 0) {
@@ -471,6 +477,24 @@ uint8_t SSLClient::connected() {
 }
 
 /**
+ * @brief Sets the client to use an insecure connection.
+ * 
+ * This function sets the client to use an insecure connection, which means that the client
+ * will not verify the server's certificate during the SSL/TLS handshake. This is useful for
+ * testing or development purposes, but it is not recommended for production use.
+ * 
+ * @return void
+ */
+void SSLClient::setInsecure() {
+  _CA_cert = NULL;
+  _cert = NULL;
+  _private_key = NULL;
+  _pskIdent = NULL;
+  _psKey = NULL;
+  _use_insecure = true;   
+}
+
+/**
  * @brief Sets the root Certificate Authority (CA) for the SSL/TLS client.
  *
  * This function is used to specify the root CA certificate for the SSL/TLS client.
@@ -483,6 +507,27 @@ uint8_t SSLClient::connected() {
 void SSLClient::setCACert(const char *rootCA) {
   log_d("Set root CA");
   _CA_cert = rootCA;
+  _use_insecure = false;
+}
+
+/**
+ * @brief Sets the root Certificate Authority (CA) for the SSL/TLS client.
+ * 
+ * This function is used to specify the root CA certificate for the SSL/TLS client.
+ * The root CA certificate is crucial for verifying the server's identity during the
+ * SSL/TLS handshake. If the server's certificate is not signed by this root CA or
+ * is not traceable back to this root CA, the verification will fail.
+ * 
+ * @param bundle The root CA certificate in its binary or PEM form.
+ */
+void SSLClient::setCACertBundle(const uint8_t * bundle) {
+  if (bundle != NULL) {
+    ssl_lib_crt_bundle_set(bundle);
+    _use_ca_bundle = true;
+  } else {
+    ssl_lib_crt_bundle_detach(NULL);
+    _use_ca_bundle = false;
+  }
 }
 
 /**
@@ -569,14 +614,8 @@ bool SSLClient::verify(const char* fp, const char* domain_name) {
  * @return Returns a pointer to the allocated buffer containing the read data, or nullptr if data could not 
  * be fully read or memory allocation failed.
  */
-char *SSLClient::_streamLoad(Stream& stream, size_t size) {
-  static char *dest = nullptr;
-
-  if(dest) {
-    free(dest);
-  }
-  
-  dest = (char*)malloc(size);
+char *SSLClient::_streamLoad(Stream& stream, size_t size) {  
+  char *dest = (char*)malloc(size+1);
   
   if (!dest) {
     return nullptr;
@@ -585,8 +624,16 @@ char *SSLClient::_streamLoad(Stream& stream, size_t size) {
   if (size != stream.readBytes(dest, size)) {
     free(dest);
     dest = nullptr;
+    return nullptr;
   }
-  
+
+  if (size != stream.readBytes(dest, size)) {
+    free(dest);
+    dest = nullptr;
+    return nullptr;
+  }
+
+  dest[size] = '\0';
   return dest;
 }
 
@@ -602,6 +649,9 @@ char *SSLClient::_streamLoad(Stream& stream, size_t size) {
  * @return Returns true if the CA certificate is successfully loaded and set; otherwise returns false.
  */
 bool SSLClient::loadCACert(Stream& stream, size_t size) {
+  if (_CA_cert != NULL) {
+    free(const_cast<char*>(_CA_cert));
+  }
   char *dest = _streamLoad(stream, size);
   bool ret = false;
   if (dest) {
@@ -623,6 +673,9 @@ bool SSLClient::loadCACert(Stream& stream, size_t size) {
  * @return Returns true if the certificate is successfully loaded and set; otherwise returns false.
  */
 bool SSLClient::loadCertificate(Stream& stream, size_t size) {
+  if (_cert != NULL) {
+    free(const_cast<char*>(_cert));
+  }
   char *dest = _streamLoad(stream, size);
   bool ret = false;
   if (dest) {
@@ -644,6 +697,9 @@ bool SSLClient::loadCertificate(Stream& stream, size_t size) {
  * @return Returns true if the private key is successfully loaded and set; otherwise returns false.
  */
 bool SSLClient::loadPrivateKey(Stream& stream, size_t size) {
+  if (_private_key != NULL) {
+    free(const_cast<char*>(_private_key));
+  }
   char *dest = _streamLoad(stream, size);
   bool ret = false;
   if (dest) {
@@ -701,4 +757,13 @@ void SSLClient::setClient(Client* client) {
  */
 void SSLClient::setTimeout(uint32_t milliseconds) { 
   _timeout = milliseconds; 
+}
+
+/**
+ * @brief Sets the application layer protocol negotiation (ALPN) protocols.
+ * 
+ * @param alpn_protos A pointer to the ALPN protocols.
+ */
+void SSLClient::setAlpnProtocols(const char **alpn_protos) {
+  _alpn_protos = alpn_protos;
 }
