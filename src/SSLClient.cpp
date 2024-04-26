@@ -17,6 +17,7 @@
 */
 
 #include "SSLClient.h"
+#include "certBundle.h"
 #include <errno.h>
 
 #undef connect
@@ -287,7 +288,7 @@ int SSLClient::connect(const char *host, uint16_t port, const char *pskIdent, co
     sslclient->handshake_timeout = _timeout;
   }
 
-  int ret = start_ssl_client(sslclient, host, port, _timeout, NULL, flase, NULL, NULL, _pskIdent, _psKey, _use_insecure, _alpn_protos);
+  int ret = start_ssl_client(sslclient, host, port, _timeout, NULL, false, NULL, NULL, _pskIdent, _psKey, _use_insecure, _alpn_protos);
   _lastError = ret;
 
   if (ret < 0) {
@@ -524,6 +525,7 @@ void SSLClient::setCACertBundle(const uint8_t * bundle) {
   if (bundle != NULL) {
     ssl_lib_crt_bundle_set(bundle);
     _use_ca_bundle = true;
+    _use_insecure = false;
   } else {
     ssl_lib_crt_bundle_detach(NULL);
     _use_ca_bundle = false;
@@ -618,12 +620,6 @@ char *SSLClient::_streamLoad(Stream& stream, size_t size) {
   char *dest = (char*)malloc(size+1);
   
   if (!dest) {
-    return nullptr;
-  }
-  
-  if (size != stream.readBytes(dest, size)) {
-    free(dest);
-    dest = nullptr;
     return nullptr;
   }
 

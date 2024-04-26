@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <string>
 #include "ssl__client.h"
+#include "certBundle.h"
 
 //#define ARDUHAL_LOG_LEVEL 5
 //#include <esp32-hal-log.h>
@@ -80,9 +81,9 @@ static int client_net_recv( void *ctx, unsigned char *buf, size_t len ) {
   int result = client->read(buf, len);
   log_v("SSL client RX res=%d len=%zu", result, len);
 
-  if (result > 0) {
+  // if (result > 0) {
     //esp_log_buffer_hexdump_internal("SSL.RD", buf, (uint16_t)result, ESP_LOG_VERBOSE);
-  }
+  // }
   
   return result;
 }
@@ -137,9 +138,9 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
 
   log_v("SSL client RX (received=%d expected=%zu in %lums)", result, len, millis()-start);
   
-  if (result > 0) {
+  // if (result > 0) {
     //esp_log_buffer_hexdump_internal("SSL.RD", buf, (uint16_t)result, ESP_LOG_VERBOSE);
-  }
+  // }
   
   return result;
 }
@@ -327,7 +328,7 @@ int start_ssl_client(
       }
     }
     log_v("SSL config defaults set, ret: %d", ret);
-    ret = auth_root_ca_buff(ssl_client, rootCABuff, &ca_cert_initialized, pskIdent, psKey, insecure); // Step 4 route a - Set up required auth mode rootCaBuff
+    ret = auth_root_ca_buff(ssl_client, rootCABuff, &ca_cert_initialized, pskIdent, psKey, insecure, useRootCABundle); // Step 4 route a - Set up required auth mode rootCaBuff
     if (ret != 0) {
       break;
     }
@@ -468,7 +469,7 @@ int set_up_tls_defaults(sslclient__context *ssl_client) {
  * If successful, the function returns 0; otherwise, it returns an error code, -1 for a null context.
  */
 int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized,
-                      const char *pskIdent, const char *psKey, bool insecure) {
+                      const char *pskIdent, const char *psKey, bool insecure, bool useRootCABundle) {
   if (ssl_client == nullptr) {
     log_e("Uninitialised context!");
     return -1;
@@ -497,7 +498,13 @@ int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bo
       log_e("ca_cert_initialized is null!");
       return -1;
     }
-    
+  } else if (useRootCABundle) {
+    log_v("Attaching root CA cert bundle");
+    ret = ssl_lib_crt_bundle_attach(&ssl_client->ssl_conf);
+
+    if (ret < 0) {
+      return handle_error(ret);
+    }
   } else if (pskIdent != nullptr && psKey != nullptr) {
     log_v("Setting up PSK");
     
@@ -859,10 +866,10 @@ int data_to_read(sslclient__context *ssl_client) {
   int ret, res;
   
   ret = mbedtls_ssl_read(&ssl_client->ssl_ctx, NULL, 0);
-  log_v("RET: %i",ret);   // for low level debug
+  log_v("RET: %i",ret);
   
   res = mbedtls_ssl_get_bytes_avail(&ssl_client->ssl_ctx);
-  log_v("RES: %i",res);    // for low level debug
+  log_v("RES: %i",res);
   
   if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret < 0) {
     return handle_error(ret);
@@ -1015,20 +1022,10 @@ bool verify_ssl_fingerprint(sslclient__context *ssl_client, const char* fp, cons
   }
 
   // Get certificate provided by the peer
-  const mbedtls_x509_crt* crt = mbedtls_ssl_get_peer_cert(&ssl_client->ssl_ctx);
-
-  if (!crt) {
-    log_w("could not fetch peer certificate");
+  uint8_t fingerprint_remote[32];
+  if (!get_peer_fingerprint(ssl_client, fingerprint_remote)) {
     return false;
   }
-
-  // Calculate certificate's SHA256 fingerprint
-  uint8_t fingerprint_remote[32];
-  mbedtls_sha256_context sha256_ctx;
-  mbedtls_sha256_init(&sha256_ctx);
-  mbedtls_sha256_starts(&sha256_ctx, false);
-  mbedtls_sha256_update(&sha256_ctx, crt->raw.p, crt->raw.len);
-  mbedtls_sha256_finish(&sha256_ctx, fingerprint_remote);
 
   // Check if fingerprints match
   if (memcmp(fingerprint_local, fingerprint_remote, 32)) {
@@ -1042,6 +1039,35 @@ bool verify_ssl_fingerprint(sslclient__context *ssl_client, const char* fp, cons
   } else {
     return true;
   }
+}
+
+/**
+ * \brief Get the peer fingerprint object
+ * 
+ * \param ssl_client 
+ * \param sha256 
+ * \return true 
+ * \return false 
+ */
+bool get_peer_fingerprint(sslclient__context *ssl_client, uint8_t sha256[32]) {
+  if (!ssl_client) {
+    log_d("Invalid ssl_client pointer");
+    return false;
+  };
+
+  const mbedtls_x509_crt* crt = mbedtls_ssl_get_peer_cert(&ssl_client->ssl_ctx);
+  if (!crt) {
+    log_d("Failed to get peer cert.");
+    return false;
+  };
+
+  mbedtls_sha256_context sha256_ctx;
+  mbedtls_sha256_init(&sha256_ctx);
+  mbedtls_sha256_starts(&sha256_ctx, false);
+  mbedtls_sha256_update(&sha256_ctx, crt->raw.p, crt->raw.len);
+  mbedtls_sha256_finish(&sha256_ctx, sha256);
+
+  return true;
 }
 
 /**
