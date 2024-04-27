@@ -5,6 +5,7 @@
 
 #define portTICK_PERIOD_MS 1
 #define vTaskDelay(x) delay(x)
+#define pdMS_TO_TICKS(x) x
 
 #include "mocks/ESPClass.hpp"
 #include "mocks/TestClient.h"

@@ -128,6 +128,10 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
       break;
     }
   } while (millis() < tms);
+
+  if (timeout > 0 && millis() - start >= timeout) {
+    log_w("Timeout (%ums) reached, this can be caused by a slow network or a slow client, check underlying client.", timeout);
+  }
   
   int result = client->read(buf, len);
   
@@ -351,10 +355,9 @@ int start_ssl_client(
     if (ret != 0) {
       break;
     }
-    int flags = verify_server_cert(ssl_client); // Step 8 - Verify the server certificate
-    ret = flags;
+    ret = verify_server_cert(ssl_client); // Step 8 - Verify the server certificate
     if (ret != 0) {
-      log_failed_cert(flags);
+      log_failed_cert(ret);
     } else {
       log_v("Certificate verified.");
     }
