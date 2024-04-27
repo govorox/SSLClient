@@ -13,10 +13,15 @@
 // limitations under the License.
 
 
-#ifndef CERT_BUNDLE_H
-#define CERT_BUNDLE_H
+#ifndef SSL_LIB_CRT_BUNDLE_H
+#define SSL_LIB_CRT_BUNDLE_H
 
+#ifdef SSL_CLIENT_TEST_ENVIRONMENT
+#include "MbedTLS.h"
+#else
 #include "mbedtls/ssl.h"
+#endif
+
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -37,8 +42,7 @@ extern "C" {
  *             - ESP_OK  if adding certificates was successful.
  *             - Other   if an error occured or an action must be taken by the calling process.
  */
-esp_err_t ssl_lib_crt_bundle_attach(void *conf);
-
+extern esp_err_t ssl_lib_crt_bundle_attach(void *conf);
 
 /**
  * @brief      Disable and dealloc the certification bundle
@@ -47,7 +51,7 @@ esp_err_t ssl_lib_crt_bundle_attach(void *conf);
  *
  * @param[in]  conf      The config struct for the SSL connection.
  */
-void ssl_lib_crt_bundle_detach(mbedtls_ssl_config *conf);
+extern void ssl_lib_crt_bundle_detach(mbedtls_ssl_config *conf);
 
 
 /**
@@ -59,7 +63,7 @@ void ssl_lib_crt_bundle_detach(mbedtls_ssl_config *conf);
  *
  * @param[in]  x509_bundle     A pointer to the certificate bundle.
  */
-void ssl_lib_crt_bundle_set(const uint8_t *x509_bundle);
+extern void ssl_lib_crt_bundle_set(const uint8_t *x509_bundle);
 
 
 #ifdef __cplusplus

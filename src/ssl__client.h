@@ -23,6 +23,7 @@
 #endif
 
 #include <Client.h>
+#include "certBundle.h"
 
 #define SSL_CLIENT_LOW_LATENCY_NETWORK_HANDSHAKE_TIMEOUT 5000U
 #define SSL_CLIENT_DEFAULT_HANDSHAKE_TIMEOUT 15000U

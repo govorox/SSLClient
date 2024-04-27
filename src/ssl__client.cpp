@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <string>
 #include "ssl__client.h"
-#include "certBundle.h"
 
 //#define ARDUHAL_LOG_LEVEL 5
 //#include <esp32-hal-log.h>
@@ -172,29 +171,29 @@ static int client_net_send(void *ctx, const unsigned char *buf, size_t len) {
   
   // esp_log_buffer_hexdump_internal("SSL.WR", buf, (uint16_t)len, ESP_LOG_VERBOSE);BEDTLS_ERR_NET_SEND_FAILED;
 
-  int result = client->write(buf, len);
-  // int result = 0;
-  // for (int i = 0; i < len; i += SSL_CLIENT_SEND_BUFFER_SIZE) {
-  //   int bytesToWrite;
+  // int result = client->write(buf, len);
+  int result = 0;
+  for (int i = 0; i < len; i += SSL_CLIENT_SEND_BUFFER_SIZE) {
+    int bytesToWrite;
 
-  //   if (SSL_CLIENT_SEND_BUFFER_SIZE > len - i) {
-  //     bytesToWrite = len - i;
-  //   } else {
-  //     bytesToWrite = SSL_CLIENT_SEND_BUFFER_SIZE;
-  //   }
+    if (SSL_CLIENT_SEND_BUFFER_SIZE > len - i) {
+      bytesToWrite = len - i;
+    } else {
+      bytesToWrite = SSL_CLIENT_SEND_BUFFER_SIZE;
+    }
 
-  //   // Create a new buffer for each chunk
-  //   unsigned char buffer[bytesToWrite];
-  //   memcpy(buffer, &buf[i], bytesToWrite);
+    // Create a new buffer for each chunk
+    unsigned char buffer[bytesToWrite];
+    memcpy(buffer, &buf[i], bytesToWrite);
 
-  //   // Send the buffer to the client
-  //   result += client->write(buffer, bytesToWrite);
-  //   if (result == 0) {
-  //     log_e("write failed");
-  //     result = MBEDTLS_ERR_NET_SEND_FAILED;
-  //     break;
-  //   }
-  // }
+    // Send the buffer to the client
+    result += client->write(buffer, bytesToWrite);
+    if (result == 0) {
+      log_e("write failed");
+      result = MBEDTLS_ERR_NET_SEND_FAILED;
+      break;
+    }
+  }
   
   log_v("SSL client TX res=%d len=%zu", result, len);
   
@@ -500,7 +499,9 @@ int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bo
     }
   } else if (useRootCABundle) {
     log_v("Attaching root CA cert bundle");
+  #ifndef SSL_CLIENT_TEST_ENVIRONMENT // not available in test environment due to weird linker
     ret = ssl_lib_crt_bundle_attach(&ssl_client->ssl_conf);
+  #endif
 
     if (ret < 0) {
       return handle_error(ret);

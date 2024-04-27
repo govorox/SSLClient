@@ -1,12 +1,13 @@
 #ifndef MBEDTLS_MOCK_H
 #define MBEDTLS_MOCK_H
 
-#include <Arduino.h>
+#include <FunctionEmulator.h>
 
 // #define MBEDTLS_ERROR_C
 #define MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
 #define MBEDTLS_X509_BADCERT_EXPIRED                -0x01
 #define MBEDTLS_X509_BADCERT_NOT_TRUSTED            -0x08
+#define MBEDTLS_X509_BADCERT_BAD_MD                 -0x4000
 #define MBEDTLS_ERR_X509_CERT_VERIFY_FAILED         -0x2700
 #define MBEDTLS_X509_BADCERT_OTHER                  -0x0100
 #define MBEDTLS_ERR_SSL_WANT_READ                   -0x6900
@@ -18,6 +19,7 @@
 #define MBEDTLS_ERR_SSL_WANT_WRITE                  -0x6880
 #define MBEDTLS_ERR_NET_CONN_RESET                  -0x004C
 #define MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE         -0x7780
+#define MBEDTLS_ERR_X509_FATAL_ERROR                -0x3000
 #define MBEDTLS_SSL_IS_CLIENT                       0
 #define MBEDTLS_SSL_TRANSPORT_STREAM                0
 #define MBEDTLS_SSL_PRESET_DEFAULT                  0
@@ -30,6 +32,33 @@
 #define MBEDTLS_OID_CMP(oid_str, oid_buf)           (false)
 #define MBEDTLS_ASN1_IA5_STRING                     0x16
 #define MBEDTLS_ASN1_OID                            0x06
+#define MBEDTLS_MD_MAX_SIZE                         32
+#define ESP_ERR_NO_MEM                              0x101
+
+struct mbedtls_pk_context {};
+
+typedef enum {
+  MBEDTLS_MD_NONE=0,
+  MBEDTLS_MD_MD2,
+  MBEDTLS_MD_MD4,
+  MBEDTLS_MD_MD5,
+  MBEDTLS_MD_SHA1,
+  MBEDTLS_MD_SHA224,
+  MBEDTLS_MD_SHA256,
+  MBEDTLS_MD_SHA384,
+  MBEDTLS_MD_SHA512,
+  MBEDTLS_MD_RIPEMD160,
+} mbedtls_md_type_t;
+
+typedef enum {
+  MBEDTLS_PK_NONE=0,
+  MBEDTLS_PK_RSA,
+  MBEDTLS_PK_ECKEY,
+  MBEDTLS_PK_ECKEY_DH,
+  MBEDTLS_PK_ECDSA,
+  MBEDTLS_PK_RSA_ALT,
+  MBEDTLS_PK_RSASSA_PSS
+} mbedtls_pk_type_t;
 
 typedef struct mbedtls_asn1_buf {
   int tag;
@@ -50,6 +79,7 @@ typedef struct mbedtls_asn1_sequence {
 } mbedtls_asn1_sequence;
 
 typedef mbedtls_asn1_sequence mbedtls_x509_sequence;
+typedef mbedtls_asn1_buf mbedtls_x509_buf;
 
 typedef int mbedtls_ssl_send_t(void *ctx, const unsigned char *buf, size_t len);
 typedef int mbedtls_ssl_recv_t(void *ctx, unsigned char *buf, size_t len);
@@ -66,6 +96,13 @@ struct mbedtls_x509_crt {
   rawStruct raw;
   mbedtls_x509_sequence subject_alt_names;
   mbedtls_asn1_named_data subject;
+  mbedtls_pk_context pk;
+  mbedtls_x509_buf sig;
+  mbedtls_pk_type_t sig_pk;
+  mbedtls_md_type_t sig_md;
+  void *sig_opts;
+  mbedtls_x509_buf issuer_raw;
+  mbedtls_x509_buf tbs; 
 };
 struct mbedtls_ssl_config {
   void* ca_chain;
@@ -74,12 +111,26 @@ struct mbedtls_ssl_config {
   mbedtls_x509_crt* actual_key_cert;
 };
 struct mbedtls_x509_crl {};
-struct mbedtls_pk_context {};
 struct mbedtls_sha256_context {
   uint32_t total[2];
   uint32_t state[8];
   unsigned char buffer[64];
   int is224;
+};
+
+struct mbedtls_md_info_t {
+  mbedtls_md_type_t type;
+  const char * name;
+  int size;
+  int block_size;
+  void (*starts_func)( void *ctx );
+  void (*update_func)( void *ctx, const unsigned char *input, size_t ilen );
+  void (*finish_func)( void *ctx, unsigned char *output );
+  void (*digest_func)( const unsigned char *input, size_t ilen, unsigned char *output );
+  void * (*ctx_alloc_func)( void );
+  void (*ctx_free_func)( void *ctx );
+  void (*clone_func)( void *dst, const void *src );
+  void (*process_func)( void *ctx, const unsigned char *input );
 };
 
 const char* mock_cert_data = "MockCertificateData";
@@ -388,6 +439,47 @@ int mbedtls_ssl_conf_alpn_protocols(mbedtls_ssl_config *conf, const char **proto
   return mbedtls_ssl_conf_alpn_protocols_stub.mock<int>("mbedtls_ssl_conf_alpn_protocols");
 }
 
+FunctionEmulator mbedtls_pk_parse_public_key_stub("mbedtls_ssl_conf_alpn_protocols");
+int mbedtls_pk_parse_public_key(mbedtls_pk_context *ctx, const unsigned char *key, size_t keylen) {
+  mbedtls_pk_parse_public_key_stub.recordFunctionCall();
+  return mbedtls_pk_parse_public_key_stub.mock<int>("mbedtls_pk_parse_key");
+}
+
+FunctionEmulator mbedtls_pk_can_do_stub("mbedtls_pk_can_do_stub");
+int mbedtls_pk_can_do( const mbedtls_pk_context *ctx, mbedtls_pk_type_t type ) {
+  mbedtls_pk_can_do_stub.recordFunctionCall();
+  return mbedtls_pk_can_do_stub.mock<int>("mbedtls_pk_can_do");
+}
+
+FunctionEmulator mbedtls_ssl_conf_verify_stub("mbedtls_ssl_conf_verify");
+void mbedtls_ssl_conf_verify(mbedtls_ssl_config *conf, int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *), void *p_vrfy) {
+  mbedtls_ssl_conf_verify_stub.recordFunctionCall();
+}
+
+FunctionEmulator mbedtls_md_get_size_stub("mbedtls_md_get_size");
+unsigned char mbedtls_md_get_size(const mbedtls_md_info_t *md_info) {
+  mbedtls_md_get_size_stub.recordFunctionCall();
+  return mbedtls_md_get_size_stub.mock<unsigned char>("mbedtls_md_get_size");
+}
+
+FunctionEmulator mbedtls_md_info_from_type_stub("mbedtls_md_info_from_type");
+const mbedtls_md_info_t *mbedtls_md_info_from_type (mbedtls_md_type_t md_type) {
+  mbedtls_md_info_from_type_stub.recordFunctionCall();
+  return mbedtls_md_info_from_type_stub.mock<const mbedtls_md_info_t*>("mbedtls_md_info_from_type");
+}
+
+FunctionEmulator mbedtls_pk_verify_ext_stub("mbedtls_pk_verify_ext");
+int mbedtls_pk_verify_ext(mbedtls_pk_type_t type, const void *options, mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len) {
+  mbedtls_pk_verify_ext_stub.recordFunctionCall();
+  return mbedtls_pk_verify_ext_stub.mock<int>("mbedtls_pk_verify_ext");
+}
+
+FunctionEmulator mbedtls_md_stub("mbedtls_md");
+int mbedtls_md(const mbedtls_md_info_t *md_info, unsigned char *p, size_t len, unsigned char hash[32]) {
+  mbedtls_md_stub.recordFunctionCall();
+  return mbedtls_md_stub.mock<int>("mbedtls_md");
+}
+
 void mbedtls_mock_reset_return_values() {
   mbedtls_ssl_get_peer_cert_stub.reset();
   mbedtls_ssl_init_stub.reset();
@@ -430,6 +522,11 @@ void mbedtls_mock_reset_return_values() {
   mbedtls_ssl_write_stub.reset();
   mbedtls_ssl_get_version_stub.reset();
   mbedtls_ssl_get_ciphersuite_stub.reset();
+  mbedtls_pk_parse_public_key_stub.reset();
+  mbedtls_pk_can_do_stub.reset();
+  mbedtls_ssl_conf_verify_stub.reset();
+  mbedtls_md_get_size_stub.reset();
+  mbedtls_md_info_from_type_stub.reset();
 }
 
 #endif // MBEDTLS_MOCK_H
