@@ -325,7 +325,7 @@ int start_ssl_client(
       break;
     }
     if (alpn_protos != NULL) {
-      log_v("Setting ALPN protocols");
+      log_i("Setting ALPN protocols");
       if ((ret = mbedtls_ssl_conf_alpn_protocols(&ssl_client->ssl_conf, alpn_protos) ) != 0) {
         return handle_error(ret);
       }

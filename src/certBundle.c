@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-extern "C" {
 
 #include <string.h>
 #include <esp_system.h>
@@ -213,5 +212,3 @@ void ssl_lib_crt_bundle_set(const uint8_t *x509_bundle)
     free(s_crt_bundle.crts);
     esp_crt_bundle_init(x509_bundle);
 }
-
-} // extern "C"
