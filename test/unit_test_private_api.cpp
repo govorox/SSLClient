@@ -516,6 +516,7 @@ void test_successful_ssl_client_start(void) {
   uint32_t port = 443;
   int timeout = 1000;
   const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  bool useRootCABundle = false;
   const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
   const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
   const char *pskIdent = NULL;
@@ -533,7 +534,7 @@ void test_successful_ssl_client_start(void) {
   mbedtls_ssl_get_verify_result_stub.returns("mbedtls_ssl_get_verify_result", (uint32_t)0);
 
   // Act
-  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, useRootCABundle, cli_cert, cli_key, pskIdent, psKey, false, nullptr);
 
   // Assert
   TEST_ASSERT_EQUAL(1, result);
@@ -548,13 +549,14 @@ void test_ssl_client_start_with_invalid_host(void) {
   uint32_t port = 443;
   int timeout = 1000;
   const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  bool useRootCABundle = false;
   const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
   const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
   const char *pskIdent = NULL;
   const char *psKey = NULL;
 
   // Act
-  int result = start_ssl_client(testContext, "invalid_host", port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+  int result = start_ssl_client(testContext, "invalid_host", port, timeout, rootCABuff, useRootCABundle, cli_cert, cli_key, pskIdent, psKey, false, NULL);
 
   // Assert
   TEST_ASSERT_EQUAL(0, result);
@@ -568,6 +570,7 @@ void test_ssl_client_start_invalid_port(void) {
   const char *host = "example.com";
   int timeout = 1000;
   const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  bool useRootCABundle = false;
   const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
   const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
   const char *pskIdent = NULL;
@@ -575,7 +578,7 @@ void test_ssl_client_start_invalid_port(void) {
   uint32_t port = (uint32_t)432589743022453;
   
   // Act
-  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, useRootCABundle, cli_cert, cli_key, pskIdent, psKey, false, nullptr);
   
   // Assert
   TEST_ASSERT_EQUAL(0, result);
@@ -587,13 +590,14 @@ void test_ssl_client_start_failed_tcp_connection(void) {
   uint32_t port = 443;
   int timeout = 1000;
   const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  bool useRootCABundle = false;
   const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
   const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
   const char *pskIdent = NULL;
   const char *psKey = NULL;
   
   // Act - null testContext->client
-  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, useRootCABundle, cli_cert, cli_key, pskIdent, psKey, false, nullptr);
   
   // Assert
   TEST_ASSERT_EQUAL(0, result);
@@ -609,6 +613,7 @@ void test_ssl_client_start_failed_ssl_tls_handshake(void) {
   uint32_t port = 443;
   int timeout = 1000;
   const char *rootCABuff = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
+  bool useRootCABundle = false;
   const char *cli_cert = "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----";
   const char *cli_key = "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----";
   const char *pskIdent = NULL;
@@ -625,7 +630,7 @@ void test_ssl_client_start_failed_ssl_tls_handshake(void) {
   mbedtls_ssl_get_record_expansion_stub.returns("mbedtls_ssl_get_record_expansion", MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE);
   
   // Act
-  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, cli_cert, cli_key, pskIdent, psKey);
+  int result = start_ssl_client(testContext, host, port, timeout, rootCABuff, useRootCABundle, cli_cert, cli_key, pskIdent, psKey, false, nullptr);
   
   // Assert
   TEST_ASSERT_EQUAL(0, result);
@@ -1379,6 +1384,10 @@ void run_verify_ssl_dn_tests(void) {
 
 /* test auth_root_ca_buff function */
 
+// TODO test insecure mode on
+// TODO test rootCaBundle success
+// TODO test rootCaBundle failure
+// TODO test rootCaBundle edge
 void test_auth_root_ca_buff_success(void) {
   // Arrange
   const char *valid_ca_buff = "<valid certificate buffer>";
@@ -1386,7 +1395,7 @@ void test_auth_root_ca_buff_success(void) {
   mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", 0);
 
   // Act
-  int result = auth_root_ca_buff(testContext, valid_ca_buff, &ca_cert_initialized, NULL, NULL);
+  int result = auth_root_ca_buff(testContext, valid_ca_buff, &ca_cert_initialized, NULL, NULL, false, false);
 
   // Assert
   TEST_ASSERT_TRUE(log_v_stub.wasCalled());
@@ -1400,7 +1409,7 @@ void test_auth_root_ca_buff_failure(void) {
   mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE);
 
   // Act
-  int result = auth_root_ca_buff(testContext, invalid_ca_buff, &ca_cert_initialized, NULL, NULL);
+  int result = auth_root_ca_buff(testContext, invalid_ca_buff, &ca_cert_initialized, NULL, NULL, false, false);
 
   // Assert
   TEST_ASSERT_EQUAL_INT_MESSAGE(MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE, result, "Expected failure in configuration.");
@@ -1411,7 +1420,7 @@ void test_auth_root_ca_buff_edge(void) {
   int returnVal = -1;
 
   // Act
-  int result = auth_root_ca_buff(testContext, NULL, NULL, "<pskIdent>", "<psKey>");
+  int result = auth_root_ca_buff(testContext, NULL, NULL, "<pskIdent>", "<psKey>", false, false);
 
   // Assert
   TEST_ASSERT_EQUAL_INT(returnVal, result);
@@ -1423,7 +1432,7 @@ void test_auth_root_ca_buff_null_ssl_client(void) {
   int returnVal = -1;
 
   // Act
-  int result = auth_root_ca_buff(NULL, NULL, NULL, NULL, NULL);
+  int result = auth_root_ca_buff(NULL, NULL, NULL, NULL, NULL, true, false);
 
   // Assert
   TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
@@ -1440,7 +1449,7 @@ void test_auth_root_ca_buff_invalid_ca_valid_psk(void) {
   mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE);
 
   // Act
-  int result = auth_root_ca_buff(testContext, invalid_ca_buff, &ca_cert_initialized, valid_pskIdent, valid_psKey);
+  int result = auth_root_ca_buff(testContext, invalid_ca_buff, &ca_cert_initialized, valid_pskIdent, valid_psKey, false, false);
 
   // Assert
   TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 0);
@@ -1456,7 +1465,7 @@ void test_auth_root_ca_buff_valid_ca_valid_psk(void) {
   int returnVal = -1;
 
   // Act
-  int result = auth_root_ca_buff(testContext, valid_ca_buff, NULL, valid_pskIdent, valid_psKey);
+  int result = auth_root_ca_buff(testContext, valid_ca_buff, NULL, valid_pskIdent, valid_psKey, false, false);
 
   // Assert
   TEST_ASSERT_TRUE(log_e_stub.timesCalled() == 1);
@@ -1469,7 +1478,7 @@ void test_auth_root_ca_buff_long_psk(void) {
   const char *long_psKey = "<very long psk key>";
 
   // Act
-  int result = auth_root_ca_buff(testContext, NULL, NULL, "<valid psk identity>", long_psKey);
+  int result = auth_root_ca_buff(testContext, NULL, NULL, "<valid psk identity>", long_psKey, false, false);
 
   // Assert
   TEST_ASSERT_EQUAL_INT(-1, result);
@@ -1480,7 +1489,7 @@ void test_auth_root_ca_buff_malformed_psk(void) {
   const char *malformed_psKey = "<malformed psk key>";
 
   // Act
-  int result = auth_root_ca_buff(testContext, NULL, NULL, "<valid psk identity>", malformed_psKey);
+  int result = auth_root_ca_buff(testContext, NULL, NULL, "<valid psk identity>", malformed_psKey, false, false);
 
   // Assert
   TEST_ASSERT_EQUAL_INT(-1, result);
