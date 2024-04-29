@@ -23,7 +23,6 @@
 #endif
 
 #include <Client.h>
-#include "certBundle.h"
 
 #define SSL_CLIENT_LOW_LATENCY_NETWORK_HANDSHAKE_TIMEOUT 5000U
 #define SSL_CLIENT_DEFAULT_HANDSHAKE_TIMEOUT 15000U
@@ -56,7 +55,7 @@ int start_ssl_client(sslclient__context *ssl_client, const char *host, uint32_t 
 int init_tcp_connection(sslclient__context *ssl_client, const char *host, uint32_t port);
 int seed_random_number_generator(sslclient__context *ssl_client);
 int set_up_tls_defaults(sslclient__context *ssl_client);
-int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized, const char *pskIdent, const char *psKey, bool insecure, bool useRootCABundle);
+int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized, const char *pskIdent, const char *psKey, bool insecure);
 int auth_client_cert_key(sslclient__context *ssl_client, const char *cli_cert, const char *cli_key, bool *client_cert_initialized, bool *client_key_initialized);
 int set_hostname_for_tls(sslclient__context *ssl_client, const char *host);
 int set_io_callbacks_and_timeout(sslclient__context *ssl_client, int timeout);
