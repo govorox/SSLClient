@@ -15,6 +15,7 @@ Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/
 **ALPN Support**: Application Layer Protocol Negotiation for efficient server communication.  
 **Cert Bundles**: Simplifies management and use of multiple CA certificates.  
 **Bug Fix**: Corrects byte calculation for record expansion post-handshake.
+**More Examples**: Examples for the ESP32 PlatformIO for ALPN protocols, AWS, and using certificate bundles.
 
 ## ✨ Features
 - Secure TLS communication.
