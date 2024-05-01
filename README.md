@@ -1,31 +1,34 @@
-# SSLClient Arduino Library (Version 1.1.10)
+# SSLClient Arduino Library (Version 1.2.0)
+
+#### Available on PlatformIO registry as digitaldragon/SSLClient@1.2.0
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient)
 
-![arduino-library-badge](https://www.ardu-badge.com/badge/GovoroxSSLClient.svg)
+#### Available on Arduino Libraries registry to digitaldragon/GovoroxSSLClient@1.2.0
+[![arduino-library-badge](https://www.ardu-badge.com/badge/GovoroxSSLClient.svg)](https://www.ardu-badge.com/badge/GovoroxSSLClient.svg)
 
-#### Available on PlatformIO registry as digitaldragon/SSLClient@1.1.10
-#### Available on Arduino Libraries registry to digitaldragon/GovoroxSSLClient@1.1.10
+## 🚀 Overview
+SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, providing a transparent SSL/TLS layer over any **Client** class instance. Leverages *mbedtls* for robust, efficient cryptographic operations, initially tailored for ESP32 but adaptable across platforms.
 
-## Overview - SSLClient Arduino library using *mbedtls* functions
-The SSLClient class implements support for secure connections using TLS (SSL). It Provides a transparent SSL wrapper over existing transport object of a **Client** class.
 Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure) for Arduino/ESP32.
-Designed and tested on ESP32, but should be portable to other platforms.
 
-The SSLClient library offers a simple way to add SSL/TLS encryption to your Arduino/ESP32 projects. Utilizing mbedtls functions, it provides a transparent SSL wrapper for the Client class. Originally designed for ESP32, it's adaptable for other platforms.
+## 🌟 What's New in 1.2.0
+**ALPN Support**: Application Layer Protocol Negotiation for efficient server communication.  
+**Cert Bundles**: Simplifies management and use of multiple CA certificates.  
+**Bug Fix**: Corrects byte calculation for record expansion post-handshake.
 
-## Features
-Secure TLS communication.
-Based on mbedtls.
-Compatible with Arduino/ESP32 and potentially other platforms.
-Suitable for IoT applications, including AWS IoT.
+## ✨ Features
+- Secure TLS communication.
+- Based on mbedtls.
+- Compatible with Arduino/ESP32 and potentially other platforms.
+- Suitable for IoT applications, including AWS IoT.
 
-## Installation
+## 🔧 Installation
 Install via the Arduino Library Manager or PlatformIO:
 
 Arduino IDE: Search for "SSLClient".
-PlatformIO: Add `digitaldragon/SSLClient@^1.1.10` to platformio.ini.
+PlatformIO: Add `digitaldragon/SSLClient@^1.2.0` to platformio.ini.
 
-## Usage
+## 🛠 Usage
 ### Basic Connection
 ```cpp
 #include <SSLClient.h>
@@ -53,7 +56,7 @@ secure.setPrivateKey(AWS_CERT_PRIVATE);
 MQTTClient mqtt = MQTTClient(256);
 mqtt.begin(AWS_IOT_ENDPOINT, 8883, secure);
 ```
-### Application Notes
+### 📚 Application Notes
 The `SSLClient.cpp` file provides a comprehensive suite of functions for handling SSL/TLS connections in an Arduino environment, particularly for the ESP32. These functions can be categorized into several key areas of functionality, which are essential for understanding the library's capabilities. Here's a user guide to the functionality based on the documentation blocks of these functions:
 
 ### Error Handling
@@ -101,5 +104,19 @@ The `SSLClient.cpp` file provides a comprehensive suite of functions for handlin
 
 This user guide provides a comprehensive overview of each function, offering insights into how to use the SSLClient library effectively for secure communication in Arduino-based projects. Each function is designed to handle specific aspects of SSL/TLS communication, from establishing connections and handling data transmission to managing certificates and ensuring security.
 
-## License
+## 📄 License
 The library is released under GNU General Public Licence. See the LICENSE file for more details.
+
+## 📶 Handy CSQ / RSSI / Signal Strength Mapping
+| CSQ Value | RSSI (dBm)          | Description      |
+|-----------|---------------------|------------------|
+| 0         | -113 dBm or less    | No signal        |
+| 1-2       | -111 dBm to -109 dBm| Very poor signal |
+| 3-9       | -107 dBm to -93 dBm | Poor signal      |
+| 10-14     | -91 dBm to -83 dBm  | Fair signal      |
+| 15-19     | -81 dBm to -73 dBm  | Good signal      |
+| 20-30     | -71 dBm to -53 dBm  | Very good signal |
+| 31        | -51 dBm or more     | Excellent signal |
+
+## 🖥 Contributing
+Contributions are welcome! Please fork the repository and submit pull requests with your enhancements.
