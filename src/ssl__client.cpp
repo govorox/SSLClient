@@ -397,7 +397,8 @@ int init_tcp_connection(sslclient__context *ssl_client, const char *host, uint32
   log_v("Client pointer: %p", (void*) pClient);
 
   if (!pClient->connect(host, port)) {
-    log_e("Connection to server failed!");
+    log_e(
+      "Connection to server failed, is the signal good, server available at this address and timeout sufficient? %s:%d", host, port);
     return -2;
   }
 
