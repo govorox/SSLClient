@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <string>
 #include "ssl__client.h"
+#include "certBundle.h"
 
 //#define ARDUHAL_LOG_LEVEL 5
 //#include <esp32-hal-log.h>
@@ -80,9 +81,9 @@ static int client_net_recv( void *ctx, unsigned char *buf, size_t len ) {
   int result = client->read(buf, len);
   log_v("SSL client RX res=%d len=%zu", result, len);
 
-  if (result > 0) {
+  // if (result > 0) {
     //esp_log_buffer_hexdump_internal("SSL.RD", buf, (uint16_t)result, ESP_LOG_VERBOSE);
-  }
+  // }
   
   return result;
 }
@@ -120,11 +121,14 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
   unsigned long start = millis();
   unsigned long tms = start + timeout;
   
-  int pending = client->available();
-  while (pending < len && millis() < tms) {
-    delay(1);
-    pending = client->available();
-  }
+  do {
+    int pending = client->available();
+    if (pending < len && timeout > 0) {
+      delay(1);
+    } else {
+      break;
+    }
+  } while (millis() < tms);
   
   int result = client->read(buf, len);
   
@@ -134,9 +138,9 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
 
   log_v("SSL client RX (received=%d expected=%zu in %lums)", result, len, millis()-start);
   
-  if (result > 0) {
+  // if (result > 0) {
     //esp_log_buffer_hexdump_internal("SSL.RD", buf, (uint16_t)result, ESP_LOG_VERBOSE);
-  }
+  // }
   
   return result;
 }
@@ -168,6 +172,7 @@ static int client_net_send(void *ctx, const unsigned char *buf, size_t len) {
   
   // esp_log_buffer_hexdump_internal("SSL.WR", buf, (uint16_t)len, ESP_LOG_VERBOSE);BEDTLS_ERR_NET_SEND_FAILED;
 
+  // int result = client->write(buf, len);
   int result = 0;
   for (int i = 0; i < len; i += SSL_CLIENT_SEND_BUFFER_SIZE) {
     int bytesToWrite;
@@ -271,10 +276,13 @@ void log_failed_cert(int flags) {
  * \param port Port number for the connection.
  * \param timeout Timeout value for the connection.
  * \param rootCABuff Pointer to the root CA buffer.
+ * \param useRootCABundle Flag indicating if the root CA bundle should be used.
  * \param cli_cert Pointer to the client certificate.
  * \param cli_key Pointer to the client key.
  * \param pskIdent Pointer to the PSK identifier.s
  * \param psKey Pointer to the PSK key.
+ * \param insecure Flag indicating if the connection is insecure.
+ * \param alpn_protos Pointer to the ALPN protocols.
  * \return 1 on successful SSL client start, 0 otherwise.
  */
 int start_ssl_client(
@@ -283,10 +291,13 @@ int start_ssl_client(
   uint32_t port,
   int timeout,
   const char *rootCABuff,
+  bool useRootCABundle,
   const char *cli_cert,
   const char *cli_key,
   const char *pskIdent,
-  const char *psKey
+  const char *psKey,
+  bool insecure,
+  const char **alpn_protos
 ) {
   log_v("Free internal heap before TLS %u", ESP.getFreeHeap());
   log_v("Connecting to %s:%d", host, port);
@@ -310,8 +321,14 @@ int start_ssl_client(
     if (ret != 0) { // MBEDTLS_ERR_XXX_ALLOC_FAILED undefined?
       break;
     }
+    if (alpn_protos != NULL) {
+      log_v("Setting ALPN protocols");
+      if ((ret = mbedtls_ssl_conf_alpn_protocols(&ssl_client->ssl_conf, alpn_protos) ) != 0) {
+        return handle_error(ret);
+      }
+    }
     log_v("SSL config defaults set, ret: %d", ret);
-    ret = auth_root_ca_buff(ssl_client, rootCABuff, &ca_cert_initialized, pskIdent, psKey); // Step 4 route a - Set up required auth mode rootCaBuff
+    ret = auth_root_ca_buff(ssl_client, rootCABuff, &ca_cert_initialized, pskIdent, psKey, insecure); // Step 4 route a - Set up required auth mode rootCaBuff
     if (ret != 0) {
       break;
     }
@@ -380,7 +397,8 @@ int init_tcp_connection(sslclient__context *ssl_client, const char *host, uint32
   log_v("Client pointer: %p", (void*) pClient);
 
   if (!pClient->connect(host, port)) {
-    log_e("Connection to server failed!");
+    log_e(
+      "Connection to server failed, is the signal good, server available at this address and timeout sufficient? %s:%d", host, port);
     return -2;
   }
 
@@ -405,7 +423,7 @@ int seed_random_number_generator(sslclient__context *ssl_client) {
   mbedtls_entropy_init(&ssl_client->entropy_ctx);
   log_v("Entropy context initialized");
   int ret = mbedtls_ctr_drbg_seed(&ssl_client->drbg_ctx, mbedtls_entropy_func,
-                               &ssl_client->entropy_ctx, (const unsigned char *) persy, strlen(persy));
+                                  &ssl_client->entropy_ctx, (const unsigned char *) persy, strlen(persy));
   return ret;
 }
 
@@ -439,6 +457,7 @@ int set_up_tls_defaults(sslclient__context *ssl_client) {
  * \param pskIdent         const char* - The PSK identity.
  * \param psKey            const char* - The PSK key.
  * \param func_ret         int* - Pointer to an integer to hold the return value.
+ * \param insecure         bool - Flag indicating if the connection is insecure.
  *
  * \return int             0 if the SSL/TLS authentication options are configured successfully.
  * \return int             An error code if the configuration process fails.
@@ -451,14 +470,17 @@ int set_up_tls_defaults(sslclient__context *ssl_client) {
  * If successful, the function returns 0; otherwise, it returns an error code, -1 for a null context.
  */
 int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized,
-                      const char *pskIdent, const char *psKey) {
+                      const char *pskIdent, const char *psKey, bool insecure) {
   if (ssl_client == nullptr) {
     log_e("Uninitialised context!");
     return -1;
   }
 
   int ret = 0;
-  if (rootCABuff != nullptr) {
+
+  if (insecure) {
+    mbedtls_ssl_conf_authmode(&ssl_client->ssl_conf, MBEDTLS_SSL_VERIFY_NONE);
+  } else if (rootCABuff != nullptr) {
     log_v("Loading CA cert");
     mbedtls_x509_crt_init(&ssl_client->ca_cert);
     mbedtls_ssl_conf_authmode(&ssl_client->ssl_conf, MBEDTLS_SSL_VERIFY_REQUIRED);
@@ -720,14 +742,10 @@ int perform_ssl_handshake(sslclient__context *ssl_client, const char *cli_cert, 
   }
 
   if (cli_cert != NULL && cli_key != NULL) {
-    log_v("Protocol is %s Ciphersuite is %s", mbedtls_ssl_get_version(&ssl_client->ssl_ctx), mbedtls_ssl_get_ciphersuite(&ssl_client->ssl_ctx));
-    ret = mbedtls_ssl_get_record_expansion(&ssl_client->ssl_ctx);
-    if (ret != 0) {
-      if (ret == MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE) {
-        log_w("Record expansion is not available (compression)");
-      } else {
-        log_e("mbedtls_ssl_get_record_expansion returned -0x%x", -ret);
-      }
+    log_d("Protocol is %s Ciphersuite is %s", mbedtls_ssl_get_version(&ssl_client->ssl_ctx), mbedtls_ssl_get_ciphersuite(&ssl_client->ssl_ctx));
+    int exp = mbedtls_ssl_get_record_expansion(&ssl_client->ssl_ctx);
+    if (exp >= 0) {
+      log_d("Record expansion is %d", exp);
     } else {
       log_w("Record expansion is unknown (compression)");
     }
@@ -839,10 +857,10 @@ int data_to_read(sslclient__context *ssl_client) {
   int ret, res;
   
   ret = mbedtls_ssl_read(&ssl_client->ssl_ctx, NULL, 0);
-  log_v("RET: %i",ret);   // for low level debug
+  log_v("RET: %i",ret);
   
   res = mbedtls_ssl_get_bytes_avail(&ssl_client->ssl_ctx);
-  log_v("RES: %i",res);    // for low level debug
+  log_v("RES: %i",res);
   
   if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret < 0) {
     return handle_error(ret);
@@ -995,20 +1013,10 @@ bool verify_ssl_fingerprint(sslclient__context *ssl_client, const char* fp, cons
   }
 
   // Get certificate provided by the peer
-  const mbedtls_x509_crt* crt = mbedtls_ssl_get_peer_cert(&ssl_client->ssl_ctx);
-
-  if (!crt) {
-    log_w("could not fetch peer certificate");
+  uint8_t fingerprint_remote[32];
+  if (!get_peer_fingerprint(ssl_client, fingerprint_remote)) {
     return false;
   }
-
-  // Calculate certificate's SHA256 fingerprint
-  uint8_t fingerprint_remote[32];
-  mbedtls_sha256_context sha256_ctx;
-  mbedtls_sha256_init(&sha256_ctx);
-  mbedtls_sha256_starts(&sha256_ctx, false);
-  mbedtls_sha256_update(&sha256_ctx, crt->raw.p, crt->raw.len);
-  mbedtls_sha256_finish(&sha256_ctx, fingerprint_remote);
 
   // Check if fingerprints match
   if (memcmp(fingerprint_local, fingerprint_remote, 32)) {
@@ -1022,6 +1030,35 @@ bool verify_ssl_fingerprint(sslclient__context *ssl_client, const char* fp, cons
   } else {
     return true;
   }
+}
+
+/**
+ * \brief Get the peer fingerprint object
+ * 
+ * \param ssl_client 
+ * \param sha256 
+ * \return true 
+ * \return false 
+ */
+bool get_peer_fingerprint(sslclient__context *ssl_client, uint8_t sha256[32]) {
+  if (!ssl_client) {
+    log_d("Invalid ssl_client pointer");
+    return false;
+  };
+
+  const mbedtls_x509_crt* crt = mbedtls_ssl_get_peer_cert(&ssl_client->ssl_ctx);
+  if (!crt) {
+    log_d("Failed to get peer cert.");
+    return false;
+  };
+
+  mbedtls_sha256_context sha256_ctx;
+  mbedtls_sha256_init(&sha256_ctx);
+  mbedtls_sha256_starts(&sha256_ctx, false);
+  mbedtls_sha256_update(&sha256_ctx, crt->raw.p, crt->raw.len);
+  mbedtls_sha256_finish(&sha256_ctx, sha256);
+
+  return true;
 }
 
 /**
