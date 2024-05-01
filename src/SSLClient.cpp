@@ -525,7 +525,6 @@ void SSLClient::setCACertBundle(const uint8_t * bundle) {
   if (bundle != NULL) {
     ssl_lib_crt_bundle_set(bundle);
     _use_ca_bundle = true;
-    _use_insecure = false;
   } else {
     ssl_lib_crt_bundle_detach(NULL);
     _use_ca_bundle = false;

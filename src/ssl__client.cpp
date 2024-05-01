@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <string>
 #include "ssl__client.h"
+#include "certBundle.h"
 
 //#define ARDUHAL_LOG_LEVEL 5
 //#include <esp32-hal-log.h>
@@ -128,10 +129,6 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
       break;
     }
   } while (millis() < tms);
-
-  if (timeout > 0 && millis() - start >= timeout) {
-    log_w("Timeout (%ums) reached, this can be caused by a slow network or a slow client, check underlying client.", timeout);
-  }
   
   int result = client->read(buf, len);
   
@@ -325,13 +322,13 @@ int start_ssl_client(
       break;
     }
     if (alpn_protos != NULL) {
-      log_i("Setting ALPN protocols");
+      log_v("Setting ALPN protocols");
       if ((ret = mbedtls_ssl_conf_alpn_protocols(&ssl_client->ssl_conf, alpn_protos) ) != 0) {
         return handle_error(ret);
       }
     }
     log_v("SSL config defaults set, ret: %d", ret);
-    ret = auth_root_ca_buff(ssl_client, rootCABuff, &ca_cert_initialized, pskIdent, psKey, insecure, useRootCABundle); // Step 4 route a - Set up required auth mode rootCaBuff
+    ret = auth_root_ca_buff(ssl_client, rootCABuff, &ca_cert_initialized, pskIdent, psKey, insecure); // Step 4 route a - Set up required auth mode rootCaBuff
     if (ret != 0) {
       break;
     }
@@ -355,9 +352,10 @@ int start_ssl_client(
     if (ret != 0) {
       break;
     }
-    ret = verify_server_cert(ssl_client); // Step 8 - Verify the server certificate
+    int flags = verify_server_cert(ssl_client); // Step 8 - Verify the server certificate
+    ret = flags;
     if (ret != 0) {
-      log_failed_cert(ret);
+      log_failed_cert(flags);
     } else {
       log_v("Certificate verified.");
     }
@@ -399,7 +397,8 @@ int init_tcp_connection(sslclient__context *ssl_client, const char *host, uint32
   log_v("Client pointer: %p", (void*) pClient);
 
   if (!pClient->connect(host, port)) {
-    log_e("Connection to server failed!");
+    log_e(
+      "Connection to server failed, is the signal good, server available at this address and timeout sufficient? %s:%d", host, port);
     return -2;
   }
 
@@ -471,7 +470,7 @@ int set_up_tls_defaults(sslclient__context *ssl_client) {
  * If successful, the function returns 0; otherwise, it returns an error code, -1 for a null context.
  */
 int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized,
-                      const char *pskIdent, const char *psKey, bool insecure, bool useRootCABundle) {
+                      const char *pskIdent, const char *psKey, bool insecure) {
   if (ssl_client == nullptr) {
     log_e("Uninitialised context!");
     return -1;
@@ -500,15 +499,7 @@ int auth_root_ca_buff(sslclient__context *ssl_client, const char *rootCABuff, bo
       log_e("ca_cert_initialized is null!");
       return -1;
     }
-  } else if (useRootCABundle) {
-    log_v("Attaching root CA cert bundle");
-  #ifndef SSL_CLIENT_TEST_ENVIRONMENT // not available in test environment due to weird linker
-    ret = ssl_lib_crt_bundle_attach(&ssl_client->ssl_conf);
-  #endif
-
-    if (ret < 0) {
-      return handle_error(ret);
-    }
+    
   } else if (pskIdent != nullptr && psKey != nullptr) {
     log_v("Setting up PSK");
     
@@ -751,14 +742,10 @@ int perform_ssl_handshake(sslclient__context *ssl_client, const char *cli_cert, 
   }
 
   if (cli_cert != NULL && cli_key != NULL) {
-    log_v("Protocol is %s Ciphersuite is %s", mbedtls_ssl_get_version(&ssl_client->ssl_ctx), mbedtls_ssl_get_ciphersuite(&ssl_client->ssl_ctx));
-    ret = mbedtls_ssl_get_record_expansion(&ssl_client->ssl_ctx);
-    if (ret != 0) {
-      if (ret == MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE) {
-        log_w("Record expansion is not available (compression)");
-      } else {
-        log_e("mbedtls_ssl_get_record_expansion returned -0x%x", -ret);
-      }
+    log_d("Protocol is %s Ciphersuite is %s", mbedtls_ssl_get_version(&ssl_client->ssl_ctx), mbedtls_ssl_get_ciphersuite(&ssl_client->ssl_ctx));
+    int exp = mbedtls_ssl_get_record_expansion(&ssl_client->ssl_ctx);
+    if (exp >= 0) {
+      log_d("Record expansion is %d", exp);
     } else {
       log_w("Record expansion is unknown (compression)");
     }
