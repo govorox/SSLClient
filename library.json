@@ -20,11 +20,10 @@
       "maintainer": true
     }
   ],
-  "dependencies": {
-    "mbedtls": {
-      "type": "git",
-      "url": "https://github.com/Mbed-TLS/mbedtls.git",
-      "version": "v3.6.0"
+  "dependencies": [
+    {
+      "name": "mbedtls",
+      "version": "https://github.com/Mbed-TLS/mbedtls.git#v3.6.0"
     }
-  }
+  ]
 }
