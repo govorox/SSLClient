@@ -1,8 +1,7 @@
 {
   "name": "SSLClient",
   "version": "1.2.0",
-  "repository":
-  {
+  "repository": {
     "type": "git",
     "url": "https://github.com/govorox/SSLClient.git"
   },
@@ -11,8 +10,7 @@
   "license": "GPL-3.0-or-later",
   "frameworks": "arduino",
   "platforms": "esp32",
-  "authors":
-  [
+  "authors": [
     {
       "name": "V Govorovski",
       "maintainer": true
@@ -21,5 +19,8 @@
       "name": "Robert Byrnes",
       "maintainer": true
     }
-  ]
+  ],
+  "dependencies": {
+    "ARMmbed/mbedtls": "^3.6.0"
+  }
 }
