@@ -21,6 +21,10 @@
     }
   ],
   "dependencies": {
-    "ARMmbed/mbedtls": "^3.6.0"
+    "mbedtls": {
+      "type": "git",
+      "url": "https://github.com/Mbed-TLS/mbedtls.git",
+      "version": "v3.6.0"
+    }
   }
 }
