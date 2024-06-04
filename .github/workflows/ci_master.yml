@@ -22,6 +22,9 @@ jobs:
     - name: Install PlatformIO
       run: |
         pip install platformio
+    
+    - name: Verify PlatformIO Version
+      run: pio --version
 
     - name: Run tests
       run: pio test -e native -vvv
