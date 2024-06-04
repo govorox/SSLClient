@@ -23,8 +23,11 @@ jobs:
       run: |
         pip install platformio
     
-    - name: Verify PlatformIO Version
+    - name: Verify PlatformIO version
       run: pio --version
+    
+    - name: Verify Arduino Core version
+      run: pio pkg list
 
     - name: Run tests
       run: pio test -e native -vvv
