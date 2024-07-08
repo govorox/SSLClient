@@ -3,7 +3,7 @@ Thank you for considering contributing to SSLClient! Please follow these guideli
 
 ## How to Report an Issue
 1. Search for similar issues in the [issue tracker](https://github.com/govorox/SSLClient/issues) to avoid duplicates.
-2. Use the provided issue templates to ensure all necessary information is included.
+2. Use the provided [issue templates](https://github.com/govorox/SSLClient/tree/master/.github/ISSUE_TEMPLATE) to ensure all necessary information is included.
 3. Provide a clear and descriptive title for the issue.
 4. Include steps to reproduce the issue, expected and actual behavior, and details about your environment.
 
@@ -15,7 +15,7 @@ Thank you for considering contributing to SSLClient! Please follow these guideli
 5. Ensure all tests pass before submitting the pull request.
 
 ## Coding Standards
-- Follow the existing code style.
+- Follow the [existing code style](CODEGUIDE.md).
 - Write clear and concise commit messages.
 - Include comments where necessary for clarity.
 
