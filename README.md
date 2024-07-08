@@ -120,4 +120,4 @@ The library is released under GNU General Public Licence. See the LICENSE file f
 | 31        | -51 dBm or more     | Excellent signal |
 
 ## 🖥 Contributing
-Contributions are welcome! Please fork the repository and submit pull requests with your enhancements.
+Contributions are welcome! Please fork the repository and submit pull requests with your enhancements. For more information on contributing, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file.
