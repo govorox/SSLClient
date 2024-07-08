@@ -17,6 +17,8 @@ Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/
 **Bug Fix**: Corrects byte calculation for record expansion post-handshake.
 **More Examples**: Examples for the ESP32 PlatformIO for ALPN protocols, AWS, and using certificate bundles.
 
+### For more details, see the [CHANGELOG](CHANGELOG.md).
+
 ## ✨ Features
 - Secure TLS communication.
 - Based on mbedtls.
