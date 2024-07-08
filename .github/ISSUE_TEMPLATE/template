@@ -20,4 +20,16 @@ Please use this template to provide the necessary information for your issue.
 <!-- A clear and concise description of what actually happened. -->
 
 ### Environment
-<!-- Details about your environment, including the operating system,
+<!-- Details about your environment, including the operating system, version, and any other relevant details. -->
+
+- **Operating System:** [e.g., Windows, macOS, Linux]
+- **Version:** [e.g., 1.0.0]
+
+### IDE
+<!-- Specify the IDE you are using. -->
+
+- [ ] Arduino IDE
+- [ ] PlatformIO IDE extension
+
+### Additional Context
+<!-- Add any other context about the problem here. -->
