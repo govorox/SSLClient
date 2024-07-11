@@ -815,14 +815,14 @@ void stop_ssl_socket(sslclient__context *ssl_client, const char *rootCABuff, con
     ssl_client->client->stop();
   }
 
-  if (ssl_client->ssl_conf.ca_chain != NULL) {
+  if (ssl_client->ssl_conf.private_ca_chain != NULL) {
     log_d("Freeing CA cert. Current ca_cert address: %p", (void *)&ssl_client->ca_cert);
 
     // Free the memory associated with the CA certificate
     mbedtls_x509_crt_free(&ssl_client->ca_cert);
   }
 
-  if (ssl_client->ssl_conf.key_cert != NULL) {
+  if (ssl_client->ssl_conf.private_key_cert != NULL) {
     log_d("Freeing client cert and client key. Current client_cert address: %p, client_key address: %p", 
           (void *)&ssl_client->client_cert, (void *)&ssl_client->client_key);
 
