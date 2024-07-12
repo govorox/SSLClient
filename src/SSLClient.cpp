@@ -93,7 +93,7 @@ SSLClient::~SSLClient() {
  */
 void SSLClient::stop() {
   if (sslclient->client != nullptr) {
-    if (sslclient->client >= 0) {
+    if (sslclient->client >= (void*)0) {
       log_d("Stopping ssl client");
       stop_ssl_socket(sslclient, _CA_cert, _cert, _private_key);
     } else {

@@ -1,0 +1,30 @@
+name: Issue Checker
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  check-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Required Information
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const { issue } = context.payload;
+            const requiredFields = ['Description', 'Steps to Reproduce', 'Expected Behavior', 'Actual Behavior', 'Environment', 'IDE'];
+            let missingFields = requiredFields.filter(field => !issue.body.includes(`### ${field}`));
+            if (missingFields.length > 0) {
+              const commentBody = `The following fields are missing: ${missingFields.join(', ')}. Please update the issue with this information.`;
+              await github.issues.createComment({
+                ...context.repo,
+                issue_number: issue.number,
+                body: commentBody
+              });
+              await github.issues.addLabels({
+                ...context.repo,
+                issue_number: issue.number,
+                labels: ['lacking information']
+              });
+            }
