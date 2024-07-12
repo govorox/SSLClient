@@ -53,7 +53,11 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
 
 
   // Fast check to avoid expensive computations when not necessary
+#if (ESP_ARDUINO_VERSION_MAJOR  >= 3)
   if (!mbedtls_pk_can_do(&parent.pk, child->private_sig_pk)) {
+#else
+  if (!mbedtls_pk_can_do(&parent.pk, child->sig_pk)) {
+#endif
     log_e("Simple compare failed");
     ret = -1;
     goto cleanup;
