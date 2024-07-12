@@ -12,7 +12,11 @@
 #include <mbedtls/platform.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/oid.h>
+#if (ESP_ARDUINO_VERSION_MAJOR  >= 3)
 #include <mbedtls/net_sockets.h>
+#else
+#include <mbedtls/net.h>
+#endif
 #include <mbedtls/debug.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/entropy.h>

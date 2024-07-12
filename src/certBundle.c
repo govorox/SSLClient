@@ -59,14 +59,22 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
     goto cleanup;
   }
 
+#if (ESP_ARDUINO_VERSION_MAJOR  >= 3)
   md_info = mbedtls_md_info_from_type(child->private_sig_md);
+#else
+  md_info = mbedtls_md_info_from_type(child->sig_md);
+#endif
   if ( (ret = mbedtls_md( md_info, child->tbs.p, child->tbs.len, hash )) != 0 ) {
     log_e("Internal mbedTLS error %X", ret);
     goto cleanup;
   }
-
+#if (ESP_ARDUINO_VERSION_MAJOR  >= 3)
   if ((ret = mbedtls_pk_verify_ext(child->private_sig_pk, child->private_sig_opts, &parent.pk, child->private_sig_md, hash, mbedtls_md_get_size( md_info ),
                                    child->private_sig.p, child->private_sig.len )) != 0 ) {
+#else
+  if ((ret = mbedtls_pk_verify_ext(child->sig_pk, child->sig_opts, &parent.pk, child->sig_md, hash, mbedtls_md_get_size( md_info ),
+                                   child->sig.p, child->sig.len )) != 0 ) {
+#endif
       log_e("PK verify failed with error %X", ret);
       goto cleanup;
   }
