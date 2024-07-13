@@ -19,7 +19,7 @@ SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, p
 Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure) for Arduino/ESP32.
 
 ## 🌟 What's New
-
+**Major Versions 2 and 3 of MBedTLS**: Updated to support the latest versions of the MBedTLS library.  
 **ALPN Support**: Application Layer Protocol Negotiation for efficient server communication.  
 **Cert Bundles**: Simplifies management and use of multiple CA certificates.  
 **Bug Fix**: Corrects byte calculation for record expansion post-handshake.
@@ -28,7 +28,17 @@ Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/
 ## ✨ Features
 
 - Secure TLS communication.
-- Based on mbedtls.
+- Based on **Mbed-TLS/mbedtls**.
+  - **Mbed TLS 2.x**
+    TLS Versions Supported: **Mbed TLS 2.x** supports `TLS 1.0`, `TLS 1.1`, and `TLS 1.2`.
+    **Specifics:**
+    `TLS 1.2`: Full support with a wide range of cipher suites and features.
+    `TLS 1.1` and `1.0`: These versions are supported, but their use is discouraged due to security vulnerabilities and weaknesses compared to `TLS 1.2`.
+  - **Mbed TLS 3.x**
+    TLS Versions Supported: **Mbed TLS 3.x** supports `TLS 1.2` and `TLS 1.3`.
+    **Specifics:**
+    `TLS 1.2`: Continues full support with extensive cipher suites and features.
+    `TLS 1.3`: Introduced in Mbed `TLS 3.x`, providing enhanced security features, improved performance, and simplified handshake process.
 - Compatible with Arduino/ESP32 and potentially other platforms.
 - Suitable for IoT applications, including AWS IoT.
 
@@ -37,7 +47,7 @@ Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/
 Install via the Arduino Library Manager or PlatformIO:
 
 Arduino IDE: Search for "SSLClient".
-PlatformIO: Add `digitaldragon/SSLClient@^1.2.0` to platformio.ini.
+PlatformIO: Add `digitaldragon/SSLClient@^1.3.0` to platformio.ini.
 
 ## 🛠 Usage
 
