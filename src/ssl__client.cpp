@@ -730,9 +730,16 @@ int perform_ssl_handshake(sslclient__context *ssl_client, const char *cli_cert, 
   unsigned long handshake_start_time = millis();
   log_d("calling mbedtls_ssl_handshake with ssl_ctx address %p", (void *)&ssl_client->ssl_ctx);
 
+  int loopCount = 0;
   while ((ret = mbedtls_ssl_handshake(&ssl_client->ssl_ctx)) != 0) {
+    loopCount++;
+  #if defined(_W5500_H_) || defined(W5500_WORKAROUND)
+    if (ret == -1 && loopCount < 200) {
+        continue; // Treat -1 as a non-error for up to 200 iterations
+    }
+  #endif
     if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-      break;
+        break; // Break on any other error
     }
 
     if ((millis()-handshake_start_time) > ssl_client->handshake_timeout) {
