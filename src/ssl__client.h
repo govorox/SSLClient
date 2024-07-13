@@ -12,7 +12,7 @@
 #include <mbedtls/platform.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/oid.h>
-#if (MBEDTLS_VERSION_MAJOR  >= 3)
+#if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
 #include <mbedtls/net_sockets.h>
 #else
 #include <mbedtls/net.h>

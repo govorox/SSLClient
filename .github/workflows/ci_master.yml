@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 jobs:
   test:
@@ -23,5 +24,14 @@ jobs:
       run: |
         pip install platformio
 
-    - name: Run tests
+    - name: Set Environment MBEDTLS_VERSION_MAJOR Variable
+      run: echo "MBEDTLS_VERSION_MAJOR=3" >> $GITHUB_ENV
+
+    - name: Run tests - First Batch
+      run: pio test -e native -vvv
+
+    - name: Set Environment MBEDTLS_BACKPORT Variable
+      run: echo "MBEDTLS_BACKPORT=true" >> $GITHUB_ENV
+
+    - name: Run tests - Second Batch
       run: pio test -e native -vvv

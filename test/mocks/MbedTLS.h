@@ -105,8 +105,13 @@ struct mbedtls_x509_crt {
   mbedtls_x509_buf tbs; 
 };
 struct mbedtls_ssl_config {
+#if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
+  void* private_ca_chain;
+  void* private_key_cert;
+#else
   void* ca_chain;
   void* key_cert;
+#endif
   mbedtls_x509_crt* actual_ca_chain;
   mbedtls_x509_crt* actual_key_cert;
 };
@@ -361,11 +366,24 @@ int mbedtls_ssl_conf_psk(mbedtls_ssl_config *conf, const unsigned char *psk, siz
   return mbedtls_ssl_conf_psk_stub.mock<int>("mbedtls_ssl_conf_psk");
 }
 
+FunctionEmulator mbedtls_ctr_drbg_random_stub("mbedtls_ctr_drbg_random");
+int mbedtls_ctr_drbg_random(void *p_rng, unsigned char *output, size_t output_len) {
+  mbedtls_ctr_drbg_random_stub.recordFunctionCall();
+  return mbedtls_ctr_drbg_random_stub.mock<int>("mbedtls_ctr_drbg_random");
+}
+
 FunctionEmulator mbedtls_pk_parse_key_stub("mbedtls_pk_parse_key");
+#if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
+int mbedtls_pk_parse_key(mbedtls_pk_context *ctx, const unsigned char *key, size_t keylen, const unsigned char *pwd, size_t pwdlen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng) {
+  mbedtls_pk_parse_key_stub.recordFunctionCall();
+  return mbedtls_pk_parse_key_stub.mock<int>("mbedtls_pk_parse_key");
+}
+#else
 int mbedtls_pk_parse_key(mbedtls_pk_context *pk, const unsigned char *key, size_t keylen, const unsigned char *pwd, size_t pwdlen) {
   mbedtls_pk_parse_key_stub.recordFunctionCall();
   return mbedtls_pk_parse_key_stub.mock<int>("mbedtls_pk_parse_key");
 }
+#endif
 
 FunctionEmulator mbedtls_ssl_conf_own_cert_stub("mbedtls_ssl_conf_own_cert");
 int mbedtls_ssl_conf_own_cert(mbedtls_ssl_config *conf, mbedtls_x509_crt *own_cert, mbedtls_pk_context *pk_key) {
@@ -377,12 +395,6 @@ FunctionEmulator mbedtls_ssl_set_hostname_stub("mbedtls_ssl_set_hostname");
 int mbedtls_ssl_set_hostname(mbedtls_ssl_context *ssl, const char *hostname) {
   mbedtls_ssl_set_hostname_stub.recordFunctionCall();
   return mbedtls_ssl_set_hostname_stub.mock<int>("mbedtls_ssl_set_hostname");
-}
-
-FunctionEmulator mbedtls_ctr_drbg_random_stub("mbedtls_ctr_drbg_random");
-int mbedtls_ctr_drbg_random(void *p_rng, unsigned char *output, size_t output_len) {
-  mbedtls_ctr_drbg_random_stub.recordFunctionCall();
-  return mbedtls_ctr_drbg_random_stub.mock<int>("mbedtls_ctr_drbg_random");
 }
 
 FunctionEmulator mbedtls_ssl_setup_stub("mbedtls_ssl_setup");
