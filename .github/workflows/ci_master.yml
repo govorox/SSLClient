@@ -34,6 +34,9 @@ jobs:
     - name: Run tests - First Batch
       run: pio test -e native -vvv
 
+    - name: Clean up
+      run: pio run -t clean
+
     - name: Set Environment MBEDTLS_BACKPORT Variable
       run: echo "MBEDTLS_BACKPORT=true" >> $GITHUB_ENV
 
