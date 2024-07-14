@@ -5,17 +5,6 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        board:
-          - esp32dev
-          - esp32doit-devkit-v1
-          - esp-wrover-kit
-        example:
-          - Esp32-platformIO/t-call-esp32-sim800l-alpn-protos
-          - Esp32-platformIO/t-call-esp32-sim800l-aws
-          - Esp32-platformIO/t-call-esp32-sim800l-cert-bundle
 
     steps:
     - name: Checkout code
@@ -25,18 +14,13 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.8'
-        
+
     - name: Install PlatformIO
       run: |
         python -m pip install --upgrade pip
         pip install platformio
         
-    - name: Initialise PlatformIO Project
+    - name: Run Custom Build Script
       run: |
-        pio project init --board ${{ matrix.board }}
-      working-directory: ./examples/${{ matrix.example }}
-        
-    - name: Build Example
-      run: |
-        pio run
-      working-directory: ./examples/${{ matrix.example }}
+        chmod +x compile_examples.sh
+        ./compile_examples.sh --clean
