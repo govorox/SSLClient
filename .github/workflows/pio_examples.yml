@@ -28,5 +28,4 @@ jobs:
 
     - name: Run Custom Build Script
       run: |
-        chmod +x compile_examples.sh
         ./compile_examples.sh --clean
