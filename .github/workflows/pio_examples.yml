@@ -22,7 +22,7 @@ jobs:
 
     - name: Verify Script Exists
       run: |
-        ls $(pwd)
+        ls -lah $(pwd)
         echo $(pwd)
 
     - name: Run Custom Build Script
