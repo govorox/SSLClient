@@ -22,4 +22,4 @@ jobs:
 
     - name: Compile Examples
       run: |
-        ./.github/workflows/compile-examples.sh --clean
+        ./.github/workflows/scripts/compile-examples.sh --clean
