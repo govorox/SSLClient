@@ -22,7 +22,6 @@ jobs:
 
     - name: Verify Script Exists
       run: |
-        ls -l compile_examples.sh
         ls $(pwd)
         echo $(pwd)
 
