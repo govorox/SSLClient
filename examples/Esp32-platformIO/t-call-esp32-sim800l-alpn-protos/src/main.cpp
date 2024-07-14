@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <SSLClient.h>
-#include <HttpClient.h>
+#include <ArduinoHttpClient.h>
 #include "ca_cert.h"
 #include <Wire.h>
 
