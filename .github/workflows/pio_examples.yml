@@ -23,7 +23,8 @@ jobs:
     - name: Verify Script Exists
       run: |
         ls -lah $(pwd)
-        echo $(pwd)
+        which sh
+        which bash
 
     - name: Run Custom Build Script
       run: |
