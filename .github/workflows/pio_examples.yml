@@ -28,4 +28,4 @@ jobs:
 
     - name: Run Custom Build Script
       run: |
-        ./compile_examples.sh --clean
+        ./compile-examples.sh --clean
