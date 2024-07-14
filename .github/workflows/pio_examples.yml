@@ -20,12 +20,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
 
-    - name: Verify Script Exists
+    - name: Compile Examples
       run: |
-        ls -lah $(pwd)
-        which sh
-        which bash
-
-    - name: Run Custom Build Script
-      run: |
-        ./compile-examples.sh --clean
+        ./.github/workflows/compile-examples.sh --clean
