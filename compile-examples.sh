@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # Set the root directory containing the example directories
 ROOT_DIR=$(pwd)
