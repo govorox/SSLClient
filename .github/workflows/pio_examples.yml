@@ -11,7 +11,6 @@ jobs:
         board:
           - esp32dev
           - esp32doit-devkit-v1
-          - esp32-wrover-kit
           - esp-wrover-kit
         example:
           - Esp32-platformIO/t-call-esp32-sim800l-alpn-protos
