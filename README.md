@@ -8,10 +8,6 @@
 [![License](https://img.shields.io/badge/License-MIT-blue)](#license)
 [![issues - SSLClient](https://img.shields.io/github/issues/govorox/SSLClient)](https://github.com/govorox/SSLClient/issues)
 
-[![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient "Go to PlatformIO Registry")
-
-[![arduino-library-badge](https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino)](https://www.arduinolibraries.info/libraries/govorox-ssl-client "Go to Arduino Libraries")
-
 ## 🚀 Overview
 
 SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, providing a transparent SSL/TLS layer over any **Client** class instance. Leverages *mbedtls* for robust, efficient cryptographic operations, initially tailored for ESP32 but adaptable across platforms.
@@ -44,10 +40,15 @@ Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/
 
 ## 🔧 Installation
 
-Install via the Arduino Library Manager or PlatformIO:
+Install via the Arduino Library Manager or PlatformIO plugin:
 
-Arduino IDE: Search for "SSLClient".
-PlatformIO: Add `digitaldragon/SSLClient@^1.3.0` to platformio.ini.
+[![arduino-library-badge](https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino)](https://www.arduinolibraries.info/libraries/govorox-ssl-client "Go to Arduino Libraries")
+
+**Arduino IDE** - search for "SSLClient"
+
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient "Go to PlatformIO Registry")
+
+**VSCode / PlatformIO** - add `digitaldragon/SSLClient@^1.3.0` to `platformio.ini`
 
 ## 🛠 Usage
 
