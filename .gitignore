@@ -3,4 +3,3 @@
 lib/*
 test.log
 emulation.log
-compile-examples.sh
