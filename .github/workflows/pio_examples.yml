@@ -20,6 +20,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
 
+    - name: Verify Script Exists
+      run: |
+        ls -l compile_examples.sh
+        ls $(pwd)
+        echo $(pwd)
+
     - name: Run Custom Build Script
       run: |
         chmod +x compile_examples.sh
