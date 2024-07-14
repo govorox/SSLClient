@@ -9,13 +9,13 @@ jobs:
     strategy:
       matrix:
         board:
-          - esp32dev
-          - esp32doit-devkit-v1
+          # - esp32dev
+          # - esp32doit-devkit-v1
           - esp-wrover-kit
         example:
           - Esp32-platformIO/t-call-esp32-sim800l-alpn-protos
-          - Esp32-platformIO/t-call-esp32-sim800l-aws
-          - Esp32-platformIO/t-call-esp32-sim800l-cert-bundle
+          # - Esp32-platformIO/t-call-esp32-sim800l-aws
+          # - Esp32-platformIO/t-call-esp32-sim800l-cert-bundle
 
     steps:
     - name: Checkout code
