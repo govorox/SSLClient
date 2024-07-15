@@ -12,7 +12,7 @@ git checkout v1.3.0  # Use the correct branch name if different
 
 # Ensure correct structure
 mkdir -p SSLClient  # Create the directory for the library files
-mv LICENSE README.md docs examples library.json library.properties platformio.ini src test SSLClient/
+mv LICENCE library.properties src SSLClient/
 
 # Compress the directory
 zip -r SSLClient.zip SSLClient

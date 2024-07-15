@@ -5,7 +5,7 @@ ROOT_DIR=$(pwd)
 CLEAN=false
 
 # Boards to test
-BOARDS=("arduino:avr:uno" "esp32:esp32:esp32doit-devkit-v1" "esp32:esp32:esp32wroverkit")
+BOARDS=("esp32:esp32:esp32doit-devkit-v1" "esp32:esp32:esp32wroverkit")
 
 # Parse command line options
 while [[ "$#" -gt 0 ]]; do

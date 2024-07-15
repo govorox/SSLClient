@@ -9,7 +9,12 @@
  * Base example:  https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE/blob/master/example/eth/eth.ino
  * 
  **************************************************************/
+#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3,0,0)
+#include <ETHClass2.h>       //Is to use the modified ETHClass
+#define ETH  ETH2
+#else
 #include <ETH.h>
+#endif
 #include "WiFi.h"
 #include "SSLClient.h"
 //To make http request esay: https://github.com/arduino-libraries/ArduinoHttpClient
