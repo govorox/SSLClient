@@ -1,0 +1,39 @@
+name: Build Arduino Examples
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: Install Arduino CLI
+      uses: arduino/setup-arduino-cli@v2
+
+    - name: Install Arduino Cores
+      run: |
+        arduino-cli config init
+        arduino-cli core update-index
+        arduino-cli core install arduino:avr
+        arduino-cli core install esp32:esp32
+
+    - name: Install libs
+      run: |
+        arduino-cli lib install "Ethernet"
+        arduino-cli lib install "GovoroxSSLClient"
+        arduino-cli lib install "WiFi"
+        arduino-cli lib install "ArduinoHttpClient"
+        arduino-cli lib install "PubSubClient"
+        arduino-cli lib install "TinyGSM"
+
+    - name: Compile Examples
+      run: |
+        ./.github/workflows/scripts/compile_arduino_examples.sh --clean

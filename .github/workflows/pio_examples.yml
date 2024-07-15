@@ -1,4 +1,4 @@
-name: Build and Test PlatformIO Examples
+name: Build PlatformIO Examples
 
 on: [push, pull_request]
 
@@ -22,4 +22,4 @@ jobs:
 
     - name: Compile Examples
       run: |
-        ./.github/workflows/scripts/compile-examples.sh --clean
+        ./.github/workflows/scripts/compile_pio_examples.sh --clean
