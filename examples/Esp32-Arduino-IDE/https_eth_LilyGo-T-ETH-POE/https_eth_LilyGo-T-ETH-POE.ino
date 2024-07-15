@@ -9,7 +9,6 @@
  * Base example:  https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE/blob/master/example/eth/eth.ino
  * 
  **************************************************************/
-#include "compat.h"
 #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3,0,0)
 #include <ETHClass2.h>       //Is to use the modified ETHClass
 #define ETH  ETH2
