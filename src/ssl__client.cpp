@@ -6,8 +6,9 @@
 * Additions Copyright (C) 2017 Evandro Luis Copercini, Apache 2.0 License.
 * Additions Copyright (C) 2019 Vadim Govorovski.
 */
-
-#include "Arduino.h"
+#ifdef PLATFORMIO
+#include <Arduino.h>
+#endif
 #include "ssl__client.h"
 #include "certBundle.h"
 

@@ -27,7 +27,6 @@ jobs:
 
     - name: Install libs
       run: |
-        arduino-cli lib install "Ethernet"
         arduino-cli lib install "GovoroxSSLClient"
         arduino-cli lib install "WiFi"
         arduino-cli lib install "ArduinoHttpClient"
