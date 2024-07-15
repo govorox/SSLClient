@@ -8,13 +8,8 @@
 */
 
 #include "Arduino.h"
-#include <algorithm>
-#include <string>
 #include "ssl__client.h"
 #include "certBundle.h"
-
-//#define ARDUHAL_LOG_LEVEL 5
-//#include <esp32-hal-log.h>
 
 #if !defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
 #  error "Please configure IDF framework to include mbedTLS -> Enable pre-shared-key ciphersuites and activate at least one cipher"
