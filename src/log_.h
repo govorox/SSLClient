@@ -8,6 +8,8 @@
 #ifndef LOG__H_
 #define LOG__H_
 
+#ifndef SSL_CLIENT_TEST_ENVIRONMENT
+
 #include <Arduino.h>
 
 #ifndef LOG_LEVEL_NONE
@@ -57,5 +59,7 @@
 #ifndef log_v
 #define log_v(...) if (LOG_LEVEL >= LOG_LEVEL_VERBOSE) { Serial.printf("V ("); Serial.printf(__VA_ARGS__); Serial.println(")"); }
 #endif
+
+#endif // SSL_CLIENT_TEST_ENVIRONMENT
 
 #endif // LOG__H_
