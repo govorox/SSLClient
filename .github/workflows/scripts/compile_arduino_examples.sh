@@ -31,7 +31,6 @@ compile_example() {
   cd "$example_dir" || exit 1
 
   # Compile the example using arduino-cli
-  # arduino-cli compile --build-property "compiler.cpp.extra_flags=-E -H" --clean --fqbn "$board" . || {
   arduino-cli compile --clean --fqbn "$board" . || {
     echo "Compilation failed for $example_dir for board: $board" >> "$ROOT_DIR/compile_errors.log"
     RESULTS["$example_name,$board"]="Failed"
@@ -71,23 +70,23 @@ clean_example() {
 # Remove previous log file
 rm -f "$ROOT_DIR/compile_errors.log"
 
-compile_example "$ROOT_DIR"/examples/Esp32-Arduino-IDE/https_gsm_SIM800/ "esp32:esp32:esp32doit-devkit-v1"
+# compile_example "$ROOT_DIR"/examples/Esp32-Arduino-IDE/https_gsm_SIM800/ "esp32:esp32:esp32doit-devkit-v1"
 
 # Iterate over each example directory
-# for example_dir in "$ROOT_DIR"/examples/Esp32-Arduino-IDE/*/; do
-#   echo "$example_dir"
-#   # Check if the directory contains a .ino file
-#   if [ -f "$example_dir"/*.ino ]; then
-#     for board in "${BOARDS[@]}"; do
-#       compile_example "$example_dir" "$board"
-#     done
+for example_dir in "$ROOT_DIR"/examples/Esp32-Arduino-IDE/*/; do
+  echo "$example_dir"
+  # Check if the directory contains a .ino file
+  if [ -f "$example_dir"/*.ino ]; then
+    for board in "${BOARDS[@]}"; do
+      compile_example "$example_dir" "$board"
+    done
 
-#     # Clean the example after all board-specific compilations are complete
-#     clean_example "$example_dir"
-#   else
-#     echo "Skipping directory $example_dir (no .ino file found)"
-#   fi
-# done
+    # Clean the example after all board-specific compilations are complete
+    clean_example "$example_dir"
+  else
+    echo "Skipping directory $example_dir (no .ino file found)"
+  fi
+done
 
 # Generate summary
 echo "Compilation Summary:"
