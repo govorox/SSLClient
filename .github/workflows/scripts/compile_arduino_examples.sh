@@ -32,7 +32,7 @@ compile_example() {
 
   # Compile the example using arduino-cli
   # arduino-cli compile --build-property "compiler.cpp.extra_flags=-E -H" --clean --fqbn "$board" . || {
-  arduino-cli compile --build-property "compiler.cpp.extra_flags=-E -H" --clean --fqbn "$board" . || {
+  arduino-cli compile --clean --fqbn "$board" . || {
     echo "Compilation failed for $example_dir for board: $board" >> "$ROOT_DIR/compile_errors.log"
     RESULTS["$example_name,$board"]="Failed"
     return 1
