@@ -18,6 +18,9 @@
 
 #ifndef SSLCLIENT_H
 #define SSLCLIENT_H
+
+#include "log_.h"
+
 #ifdef PLATFORMIO
 #include <Arduino.h>
 #endif
