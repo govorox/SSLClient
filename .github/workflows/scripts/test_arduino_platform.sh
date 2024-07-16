@@ -23,7 +23,6 @@ switch_esp32_version() {
   local version=$1
   echo "Switching to ESP32-Arduino version $version..."
   arduino-cli core install esp32:esp32@$version
-  arduino-cli core upgrade esp32:esp32@$version
 }
 
 # Check if arduino-cli is installed
