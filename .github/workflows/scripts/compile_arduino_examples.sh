@@ -70,7 +70,7 @@ clean_example() {
 # Remove previous log file
 rm -f "$ROOT_DIR/compile_errors.log"
 
-# compile_example "$ROOT_DIR"/examples/Esp32-Arduino-IDE/https_gsm_SIM800/ "esp32:esp32:esp32doit-devkit-v1"
+# compile_example "$ROOT_DIR"/examples/Esp32-Arduino-IDE/https_post_sim7600/ "esp32:esp32:esp32wroverkit"
 
 # Iterate over each example directory
 for example_dir in "$ROOT_DIR"/examples/Esp32-Arduino-IDE/*/; do

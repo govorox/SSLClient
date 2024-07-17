@@ -45,7 +45,7 @@ const char server[] = "hookb.in";
 const char resource[] = "/eKKEKgbNZPCeYYRdZXDo";
 const int port = 443;
 
-#include <TinyGsmClient.h>
+#include <TinyGSM.h>
 #include <ArduinoHttpClient.h>
 #include "SSLClient.h"
 #include "utilities.h"
@@ -212,7 +212,6 @@ void loop()
         24 - HYBRID(CDMA and eHRPD)
     */
     modem.sendAT(GF("+CNSMOD?"));
-    if (modem.waitResponse(GF(GSM_NL "+CNSMOD:")) != 1) { }
     int nmodec = modem.stream.readStringUntil(',').toInt() != 0;
     int nmode = modem.stream.readStringUntil('\n').toInt();
     modem.waitResponse();
