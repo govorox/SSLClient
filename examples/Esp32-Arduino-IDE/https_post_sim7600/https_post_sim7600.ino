@@ -8,7 +8,6 @@
  * Just comment them out.
  * https://simcom.ee/documents/SIM7600C/SIM7500_SIM7600%20Series_AT%20Command%20Manual_V1.01.pdf
  **************************************************************/
-
 #define TINY_GSM_MODEM_SIM7600
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)

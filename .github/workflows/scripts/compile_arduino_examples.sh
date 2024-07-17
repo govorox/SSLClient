@@ -1,10 +1,7 @@
 #!/usr/bin/bash
 
-# Set the root directory containing the example directories
 ROOT_DIR=$(pwd)
 CLEAN=false
-
-# Boards to test
 BOARDS=("esp32:esp32:esp32doit-devkit-v1" "esp32:esp32:esp32wroverkit")
 
 # Parse command line options
@@ -18,6 +15,7 @@ done
 
 # Initialize results array
 declare -A RESULTS
+EXIT_STATUS=0
 
 # Function to compile the example for a specific board
 compile_example() {
@@ -27,13 +25,12 @@ compile_example() {
   example_name=$(basename "$example_dir")
   echo "Compiling example in directory: $example_dir for board: $board"
 
-  # Change to the example directory
   cd "$example_dir" || exit 1
 
-  # Compile the example using arduino-cli
   arduino-cli compile --clean --fqbn "$board" . || {
     echo "Compilation failed for $example_dir for board: $board" >> "$ROOT_DIR/compile_errors.log"
     RESULTS["$example_name,$board"]="Failed"
+    EXIT_STATUS=1
     return 1
   }
 
@@ -46,10 +43,8 @@ clean_example() {
   local example_dir=$1
   echo "Cleaning example in directory: $example_dir"
 
-  # Change to the example directory
   cd "$example_dir" || exit 1
 
-  # Clean the example using arduino-cli
   arduino-cli cache clean || {
     echo "Cleaning failed for $example_dir"
     return 1
@@ -63,11 +58,9 @@ clean_example() {
     rm -rf build
   fi
 
-  # Return to the root directory
   cd "$ROOT_DIR" || exit 1
 }
 
-# Remove previous log file
 rm -f "$ROOT_DIR/compile_errors.log"
 
 # compile_example "$ROOT_DIR"/examples/Esp32-Arduino-IDE/https_post_sim7600/ "esp32:esp32:esp32wroverkit"
@@ -81,7 +74,6 @@ for example_dir in "$ROOT_DIR"/examples/Esp32-Arduino-IDE/*/; do
       compile_example "$example_dir" "$board"
     done
 
-    # Clean the example after all board-specific compilations are complete
     clean_example "$example_dir"
   else
     echo "Skipping directory $example_dir (no .ino file found)"
@@ -97,3 +89,5 @@ for key in "${!RESULTS[@]}"; do
 done
 
 echo "All examples processed. Check compile_errors.log for any compilation errors."
+
+exit $EXIT_STATUS
