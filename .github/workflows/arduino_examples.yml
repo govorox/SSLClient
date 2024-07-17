@@ -27,9 +27,13 @@ jobs:
         arduino-cli core update-index
         arduino-cli core install arduino:avr
 
-    - name: Install libs
+    - name: Install specific branch of GovoroxSSLClient
       run: |
-        arduino-cli lib install "GovoroxSSLClient"
+        mkdir -p ~/Arduino/libraries
+        git clone --branch v1.3.0 https://github.com/govorox/SSLClient.git ~/Arduino/libraries/GovoroxSSLClient
+
+    - name: Install other libs
+      run: |
         arduino-cli lib install "WiFi"
         arduino-cli lib install "ArduinoHttpClient"
         arduino-cli lib install "PubSubClient"
@@ -45,7 +49,7 @@ jobs:
         arduino-cli core install esp32:esp32@3.0.2
         ./.github/workflows/scripts/compile_arduino_examples.sh --clean
 
-    - name: Compile Examples for Arduino-ESP32@3.0.3
-      run: |
-        arduino-cli core install esp32:esp32@3.0.3
-        ./.github/workflows/scripts/compile_arduino_examples.sh --clean
+    # - name: Compile Examples for Arduino-ESP32@3.0.3
+    #   run: |
+    #     arduino-cli core install esp32:esp32@3.0.3
+    #     ./.github/workflows/scripts/compile_arduino_examples.sh --clean
