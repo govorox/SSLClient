@@ -15,6 +15,9 @@ jobs:
       with:
         python-version: '3.8'
 
+    - name: Install pyserial
+      run: python3 -m pip install pyserial
+
     - name: Install Arduino CLI
       uses: arduino/setup-arduino-cli@v2
 
