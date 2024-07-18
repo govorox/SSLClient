@@ -58,7 +58,6 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
 #else
   if (!mbedtls_pk_can_do(&parent.pk, child->sig_pk)) {
 #endif
-#endif
     log_e("Simple compare failed");
     ret = -1;
     goto cleanup;
@@ -68,7 +67,6 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
   md_info = mbedtls_md_info_from_type(child->private_sig_md);
 #else
   md_info = mbedtls_md_info_from_type(child->sig_md);
-#endif
 #endif
   if ( (ret = mbedtls_md( md_info, child->tbs.p, child->tbs.len, hash )) != 0 ) {
     log_e("Internal mbedTLS error %X", ret);
@@ -80,7 +78,6 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
 #else
   if ((ret = mbedtls_pk_verify_ext(child->sig_pk, child->sig_opts, &parent.pk, child->sig_md, hash, mbedtls_md_get_size( md_info ),
                                    child->sig.p, child->sig.len )) != 0 ) {
-#endif
 #endif
       log_e("PK verify failed with error %X", ret);
       goto cleanup;
