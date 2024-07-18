@@ -1,4 +1,5 @@
 # SSLClient Library for Arduino and ESP
+
 [![govorox - SSLClient](https://img.shields.io/static/v1?label=govorox&message=SSLClient&color=green&logo=github)](https://github.com/govorox/SSLClient "Go to GitHub repo")
 [![stars - SSLClient](https://img.shields.io/github/stars/govorox/SSLClient?style=social)](https://github.com/govorox/SSLClient)
 [![forks - SSLClient](https://img.shields.io/github/forks/govorox/SSLClient?style=social)](https://github.com/govorox/SSLClient)
@@ -7,43 +8,89 @@
 [![License](https://img.shields.io/badge/License-MIT-blue)](#license)
 [![issues - SSLClient](https://img.shields.io/github/issues/govorox/SSLClient)](https://github.com/govorox/SSLClient/issues)
 
-#### Available on PlatformIO registry as digitaldragon/SSLClient
-[![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient "Go to PlatformIO Registry")
+## Table of Contents
 
-#### Available on Arduino Libraries registry to digitaldragon/GovoroxSSLClient
-[![arduino-library-badge](https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino)](https://www.arduinolibraries.info/libraries/govorox-ssl-client "Go to Arduino Libraries")
-
-## 🚀 Overview
-SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, providing a transparent SSL/TLS layer over any **Client** class instance. Leverages *mbedtls* for robust, efficient cryptographic operations, initially tailored for ESP32 but adaptable across platforms.
-
-Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure) for Arduino/ESP32.
-
-## 🌟 What's New
-**ALPN Support**: Application Layer Protocol Negotiation for efficient server communication.  
-**Cert Bundles**: Simplifies management and use of multiple CA certificates.  
-**Bug Fix**: Corrects byte calculation for record expansion post-handshake.
-**More Examples**: Examples for the ESP32 PlatformIO for ALPN protocols, AWS, and using certificate bundles.
-
-### For more details, see the [CHANGELOG](CHANGELOG.md).
-
-## ✨ Features
-- Secure TLS communication.
-- Based on mbedtls.
-- Compatible with Arduino/ESP32 and potentially other platforms.
-- Suitable for IoT applications, including AWS IoT.
+1. [Installation](#-installation) - How to install the library using Arduino or PlatformIO.
+2. [Overview of this Library](#-overview) - An overview of the SSLClient library.
+3. [What's New](#-whats-new-in-the-latest-release) - The latest features and updates.
+4. [Features](#-features) - Key features of the SSLClient library.
+5. [Usage](#-usage) - Basic usage examples for the SSLClient library.
+6. [Overview of Functions](docs/FUNCTIONS.md) - An overview of the API for leveraging MbedTLS.
+7. [Contribute](docs/CONTRIBUTING.md) - Contributions are welcome!
+8. [Change Log](docs/CHANGELOG.md) - See what's new in each release.
+9. [Code Guide](docs/CODEGUIDE.md) - Guidelines for contributing to the project.
+10. [Signal Strength Map](docs/RSSI.md) - Useful for debugging GSM connectivity.
+11. [License](#-license) - The license for the SSLClient library (open-source).
 
 ## 🔧 Installation
-Install via the Arduino Library Manager or PlatformIO:
 
-Arduino IDE: Search for "SSLClient".
-PlatformIO: Add `digitaldragon/SSLClient@^1.2.0` to platformio.ini.
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+  <a href="https://www.arduinolibraries.info/libraries/govorox-ssl-client" title="Go to Arduino Libraries">
+    <img src="https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino" alt="arduino-library-badge">
+  </a>
+  <a href="https://registry.platformio.org/libraries/digitaldragon/SSLClient" title="Go to PlatformIO Registry">
+    <img src="https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg" alt="PlatformIO Registry">
+  </a>
+</div>
+
+*Install via the Arduino IDE or PlatformIO:*
+
+**Arduino IDE** - search for `GovoroxSSLClient` inthe library manager (for now, ensure esp32 boards are installed to version `2.0.17` and no higher)
+
+**PlatformIO** - add `digitaldragon/SSLClient@^1.3.0` to `platformio.ini`
+
+## 🚀 Overview
+
+Originally based on the `WiFiClientSecure` for Arduino-ESP32 the SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, providing a transparent SSL/TLS layer over any `Client` class instance. Leverages *mbedtls* for robust, efficient cryptographic operations, initially tailored for ESP32 but adaptable across platforms.
+
+## 🌟 What's New in the Latest Release
+
+- **Major Versions 2 and 3 of MBedTLS**: Updated to support the latest version of the MBedTLS library.  
+
+- **Feature flag for compatibility with MbedTLS v3.x.x** - Automated by `MBEDTLS_VERSION_MAJOR`.
+
+- **Add Flag `MBEDTLS_BACKPORT`** to allow override `MBEDTLS_VERSION_MAJOR >= 3`.
+
+- **Add workaround for W5500 Ethernet failing** due to client returning -1 when no error - switch on flag `W5500_WORKAROUND`.
+
+- **Close the following issues:** Support for ESP32 and W5500 based Secure Ethernet for HTTPS or MQTTS? [#44](https://github.com/govorox/SSLClient/issues/85) and issue SSLClient with W5500 not working (works well with WiFi and TinyGSM) [#85](https://github.com/govorox/SSLClient/issues/85).
+
+- **Improve documentation**
+
+- **Add GitHub Actions workflow** to ensure PlatformIO examples compile.
+
+- **Update GitHub Actions workflow** to run tests multiple times with feature flags set.
+
+- **Add GitHub Actions workflow** to ensure Arduino IDE compile.
+
+- **Fix Arduino IDE examples to compile** when using `arduino-esp32@2.0.17` - This is still broken for `@3.0.2`. There is a breaking change in `arduino-esp32` from `v3.0.0` which is causing ambiguous reference errors to byte.
+
+## ✨ Features
+
+- Secure TLS communication.
+- Based on **Mbed-TLS/mbedtls**.
+  - **Mbed TLS 2.x**
+    TLS Versions Supported: **Mbed TLS 2.x** supports `TLS 1.0`, `TLS 1.1`, and `TLS 1.2`.
+    **Specifics:**
+    `TLS 1.2`: Full support with a wide range of cipher suites and features.
+    `TLS 1.1` and `1.0`: These versions are supported, but their use is discouraged due to security vulnerabilities and weaknesses compared to `TLS 1.2`.
+  - **Mbed TLS 3.x**
+    TLS Versions Supported: **Mbed TLS 3.x** supports `TLS 1.2` and `TLS 1.3`.
+    **Specifics:**
+    `TLS 1.2`: Continues full support with extensive cipher suites and features.
+    `TLS 1.3`: Introduced in Mbed `TLS 3.x`, providing enhanced security features, improved performance, and simplified handshake process.
+- Compatible with Arduino-ESP32 and potentially other platforms.
+- Suitable for IoT applications, including AWS IoT.
 
 ## 🛠 Usage
+
 ### Basic Connection
+
 ```cpp
 #include <SSLClient.h>
 
 // Initialize your transport layer (e.g., WiFi, GSM)
+// A Client is anything which inherits from the Arduino Client class.
 Client transport = /* Your transport layer */;
 
 // Create SSLClient instance
@@ -53,6 +100,7 @@ SSLClient sslClient(&transport);
 ```
 
 ### AWS IoT Connectivity
+
 ```cpp
 TinyGsmClient transport(modem);
 SSLClient secure(&transport);
@@ -66,67 +114,7 @@ secure.setPrivateKey(AWS_CERT_PRIVATE);
 MQTTClient mqtt = MQTTClient(256);
 mqtt.begin(AWS_IOT_ENDPOINT, 8883, secure);
 ```
-### 📚 Application Notes
-The `SSLClient.cpp` file provides a comprehensive suite of functions for handling SSL/TLS connections in an Arduino environment, particularly for the ESP32. These functions can be categorized into several key areas of functionality, which are essential for understanding the library's capabilities. Here's a user guide to the functionality based on the documentation blocks of these functions:
-
-### Error Handling
-- **`_handle_error(int err, const char* function, int line)`**: This function is used internally to handle errors. It interprets the error code returned by various SSL operations and logs it for debugging purposes.
-
-### Network Communication
-- **`client_net_recv(void *ctx, unsigned char *buf, size_t len)`**: Receives data over an established SSL connection. It checks for a valid client context and returns the number of bytes received or an error code.
-- **`client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)`**: Similar to `client_net_recv`, but with an additional timeout parameter. It's useful for non-blocking operations.
-- **`client_net_send(void *ctx, const unsigned char *buf, size_t len)`**: Sends data over an SSL connection. It ensures that the client is properly initialized and connected before sending data.
-
-### Initialization and Cleanup
-- **`ssl_init(sslclient_context *ssl_client, Client *client)`**: Initializes the SSL context with default values and sets up necessary SSL configurations.
-- **`cleanup(sslclient_context *ssl_client, bool ca_cert_initialized, bool client_cert_initialized, bool client_key_initialized, int ret, const char *rootCABuff, const char *cli_cert, const char *cli_key)`**: Frees allocated resources and stops the SSL socket if an error occurred during SSL operations.
-
-### SSL Client Start and Configuration
-- **`start_ssl_client(sslclient_context *ssl_client, const char *host, uint32_t port, int timeout, const char *rootCABuff, const char *cli_cert, const char *cli_key, const char *pskIdent, const char *psKey)`**: Handles the entire process of starting an SSL client, including TCP connection initiation, random number generation seeding, SSL/TLS defaults setup, authentication, and SSL handshake.
-- **`init_tcp_connection(sslclient_context *ssl_client, const char *host, uint32_t port)`**: Initializes a TCP connection to a remote host.
-- **`seed_random_number_generator(sslclient_context *ssl_client)`**: Seeds the random number generator critical for SSL/TLS operations.
-- **`set_up_tls_defaults(sslclient_context *ssl_client)`**: Sets up SSL/TLS configuration with default settings.
-- **`auth_root_ca_buff(sslclient_context *ssl_client, const char *rootCABuff, bool *ca_cert_initialized, const char *pskIdent, const char *psKey)`**: Configures SSL/TLS authentication options based on provided CA certificates or pre-shared keys.
-- **`auth_client_cert_key(sslclient_context *ssl_client, const char *cli_cert, const char *cli_key, bool *client_cert_initialized, bool *client_key_initialized)`**: Loads and initializes the client's certificate and private key for SSL/TLS authentication.
-- **`set_hostname_for_tls(sslclient_context *ssl_client, const char *host)`**: Sets the hostname for the TLS session, which should match the Common Name (CN) in the server's certificate.
-
-### SSL Handshake and Verification
-- **`perform_ssl_handshake(sslclient_context *ssl_client, const char *cli_cert, const char *cli_key)`**: Manages the SSL/TLS handshake process.
-- **`verify_server_cert(sslclient_context *ssl_client)`**: Verifies the server's certificate against the provided root CA.
-
-### Data Transmission and Reception
-- **`data_to_read(sslclient_context *ssl_client)`**: Checks if there is data available to read from the SSL connection.
-- **`send_ssl_data(sslclient_context *ssl_client, const uint8_t *data, size_t len)`**: Sends data over an established SSL connection.
-- **`get_ssl_receive(sslclient_context *ssl_client, uint8_t *data, size_t length)`**: Receives data from the SSL connection.
-
-### Certificate Validation
-- **`verify_ssl_fingerprint(sslclient_context *ssl_client, const char* fp, const char* domain_name)`**: Verifies the certificate provided by the peer against a specified SHA256 fingerprint.
-- **`verify_ssl_dn(sslclient_context *ssl_client, const char* domain_name)`**: Checks if the peer certificate contains the specified domain name in its Common Name (CN) or Subject Alternative Names (SANs).
-
-### Utility Functions
-- **`parse_hex_nibble(char pb, uint8_t* res)`**: Parses a hexadecimal nibble into its binary representation.
-- **`match_name(const string& name, const string& domainName
-
-)`**: Compares a name from a certificate to a domain name to check if they match.
-
-### Cleanup and Socket Management
-- **`stop_ssl_socket(sslclient_context *ssl_client, const char *rootCABuff, const char *cli_cert, const char *cli_key)`**: Stops the SSL socket and frees associated resources.
-
-This user guide provides a comprehensive overview of each function, offering insights into how to use the SSLClient library effectively for secure communication in Arduino-based projects. Each function is designed to handle specific aspects of SSL/TLS communication, from establishing connections and handling data transmission to managing certificates and ensuring security.
 
 ## 📄 License
-The library is released under GNU General Public Licence. See the LICENSE file for more details.
 
-## 📶 Handy CSQ / RSSI / Signal Strength Mapping
-| CSQ Value | RSSI (dBm)          | Description      |
-|-----------|---------------------|------------------|
-| 0         | -113 dBm or less    | No signal        |
-| 1-2       | -111 dBm to -109 dBm| Very poor signal |
-| 3-9       | -107 dBm to -93 dBm | Poor signal      |
-| 10-14     | -91 dBm to -83 dBm  | Fair signal      |
-| 15-19     | -81 dBm to -73 dBm  | Good signal      |
-| 20-30     | -71 dBm to -53 dBm  | Very good signal |
-| 31        | -51 dBm or more     | Excellent signal |
-
-## 🖥 Contributing
-Contributions are welcome! Please fork the repository and submit pull requests with your enhancements. For more information on contributing, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+The library is released under GNU General Public Licence. See the `LICENSE` file for more details.

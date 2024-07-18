@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include "SSLClient.h"
-#include <HttpClient.h>
+#include <SSLClient.h>
+#include <ArduinoHttpClient.h>
 #include <Wire.h>
 #include <PubSubClient.h>
 #include <time.h>

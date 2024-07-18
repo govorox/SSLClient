@@ -6,15 +6,11 @@
 * Additions Copyright (C) 2017 Evandro Luis Copercini, Apache 2.0 License.
 * Additions Copyright (C) 2019 Vadim Govorovski.
 */
-
-#include "Arduino.h"
-#include <algorithm>
-#include <string>
+#ifdef PLATFORMIO
+#include <Arduino.h>
+#endif
 #include "ssl__client.h"
 #include "certBundle.h"
-
-//#define ARDUHAL_LOG_LEVEL 5
-//#include <esp32-hal-log.h>
 
 #if !defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
 #  error "Please configure IDF framework to include mbedTLS -> Enable pre-shared-key ciphersuites and activate at least one cipher"
@@ -576,7 +572,7 @@ int auth_client_cert_key(sslclient__context *ssl_client, const char *cli_cert, c
     }
 
     log_v("Loading private key");
-#if (MBEDTLS_VERSION_MAJOR  >= 3)
+#if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ctr_drbg_init(&ctr_drbg);
     ret = mbedtls_pk_parse_key(&ssl_client->client_key, (const unsigned char *)cli_key, strlen(cli_key) + 1, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
@@ -730,9 +726,16 @@ int perform_ssl_handshake(sslclient__context *ssl_client, const char *cli_cert, 
   unsigned long handshake_start_time = millis();
   log_d("calling mbedtls_ssl_handshake with ssl_ctx address %p", (void *)&ssl_client->ssl_ctx);
 
+  int loopCount = 0;
   while ((ret = mbedtls_ssl_handshake(&ssl_client->ssl_ctx)) != 0) {
+    loopCount++;
+  #if defined(_W5500_H_) || defined(W5500_WORKAROUND)
+    if (ret == -1 && loopCount < 200) {
+        continue; // Treat -1 as a non-error for up to 200 iterations
+    }
+  #endif
     if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-      break;
+        break; // Break on any other error
     }
 
     if ((millis()-handshake_start_time) > ssl_client->handshake_timeout) {
@@ -821,7 +824,7 @@ void stop_ssl_socket(sslclient__context *ssl_client, const char *rootCABuff, con
     log_d("Stopping SSL client. Current client pointer address: %p", (void *)ssl_client->client);
     ssl_client->client->stop();
   }
-#if (MBEDTLS_VERSION_MAJOR  >= 3)
+#if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
   if (ssl_client->ssl_conf.private_ca_chain != NULL) {
 #else
   if (ssl_client->ssl_conf.ca_chain != NULL) {
@@ -831,7 +834,7 @@ void stop_ssl_socket(sslclient__context *ssl_client, const char *rootCABuff, con
     // Free the memory associated with the CA certificate
     mbedtls_x509_crt_free(&ssl_client->ca_cert);
   }
-#if (MBEDTLS_VERSION_MAJOR  >= 3)
+#if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
   if (ssl_client->ssl_conf.private_key_cert != NULL) {
 #else
   if (ssl_client->ssl_conf.key_cert != NULL) {

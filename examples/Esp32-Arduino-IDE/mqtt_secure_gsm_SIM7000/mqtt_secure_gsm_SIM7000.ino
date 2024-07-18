@@ -61,7 +61,7 @@ SSLClient secure_presentation_layer(&gsm_transpor_layer);
 PubSubClient client(secure_presentation_layer);
 
 // For read the MQTT events
-void callback(char *topic, byte *payload, unsigned int length)
+void callback(char *topic, uint8_t *payload, unsigned int length)
 {
   Serial.print("Message arrived [");
   Serial.print(topic);

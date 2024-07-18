@@ -1,10 +1,14 @@
-name: Run PlatformIO Tests
+name: Run Unit Tests
 
 on:
-  pull_request:
+  push:
     branches:
       - master
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
 
 jobs:
   test:
@@ -23,5 +27,26 @@ jobs:
       run: |
         pip install platformio
 
-    - name: Run tests
+    - name: Set Environment MBEDTLS_VERSION_MAJOR Variable
+      run: echo "MBEDTLS_VERSION_MAJOR=3" >> $GITHUB_ENV
+
+    - name: Run tests - First Batch
+      run: pio test -e native -vvv
+
+    - name: Clean up - First Batch
+      run: pio run -t clean
+
+    - name: Set Environment MBEDTLS_BACKPORT Variable
+      run: echo "MBEDTLS_BACKPORT=true" >> $GITHUB_ENV
+
+    - name: Run tests - Second Batch
+      run: pio test -e native -vvv
+
+    - name: Clean up - Second Batch
+      run: pio run -t clean
+
+    - name: Set Environment W5500_WORKAROUND Variable
+      run: echo "W5500_WORKAROUND=true" >> $GITHUB_ENV
+
+    - name: Run tests - Third Batch
       run: pio test -e native -vvv

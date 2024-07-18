@@ -18,7 +18,7 @@
 
 #include "SSLClient.h"
 #include "certBundle.h"
-#include <errno.h>
+// #include <errno.h>
 
 #undef connect
 #undef write

@@ -104,7 +104,7 @@ bool setupPMU()
 }
 
 // For read the MQTT events
-void callback(char *topic, byte *payload, unsigned int length)
+void callback(char *topic, uint8_t *payload, unsigned int length)
 {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -187,9 +187,10 @@ void setup()
 
   
   //Add CA Certificate
+  // Update with you own certs! These are for AWS IoT and here for example only.
   secure_presentation_layer.setCACert(root_ca);
-  secure_presentation_layer.setCertificate(client_cert_pem_start);    //x509 client Certificate
-  secure_presentation_layer.setPrivateKey(client_key_pem_start);      //x509 client key
+  secure_presentation_layer.setCertificate(client_cert_pem);       //x509 client Certificate
+  secure_presentation_layer.setPrivateKey(client_public_key_pem);      //x509 client key
 
   // Modem initial setup
   setupModem();

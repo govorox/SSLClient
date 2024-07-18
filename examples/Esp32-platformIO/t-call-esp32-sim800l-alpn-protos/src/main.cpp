@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include "SSLClient.h"
-#include <HttpClient.h>
+#include <SSLClient.h>
+#include <ArduinoHttpClient.h>
 #include "ca_cert.h"
 #include <Wire.h>
 
@@ -148,7 +148,7 @@ void loop() {
     httpClient.get("/a/check");
 
     int status_code = httpClient.responseStatusCode();
-    std::string response = httpClient.responseBody();
+    std::string response = httpClient.responseBody().c_str();
 
     Serial.print("Status code: ");
     Serial.println(status_code);
