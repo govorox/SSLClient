@@ -24,15 +24,20 @@
 
 ## 🔧 Installation
 
-Install via the Arduino Library Manager or PlatformIO plugin:
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+  <a href="https://www.arduinolibraries.info/libraries/govorox-ssl-client" title="Go to Arduino Libraries">
+    <img src="https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino" alt="arduino-library-badge">
+  </a>
+  <a href="https://registry.platformio.org/libraries/digitaldragon/SSLClient" title="Go to PlatformIO Registry">
+    <img src="https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg" alt="PlatformIO Registry">
+  </a>
+</div>
 
-[![arduino-library-badge](https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino)](https://www.arduinolibraries.info/libraries/govorox-ssl-client "Go to Arduino Libraries")
+*Install via the Arduino IDE or PlatformIO:*
 
-**Arduino IDE** - search for "SSLClient"
+**Arduino IDE** - search for `GovoroxSSLClient` inthe library manager (for now, ensure esp32 boards are installed to version `2.0.17` and no higher)
 
-[![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient "Go to PlatformIO Registry")
-
-**VSCode / PlatformIO** - add `digitaldragon/SSLClient@^1.3.0` to `platformio.ini`
+**PlatformIO** - add `digitaldragon/SSLClient@^1.3.0` to `platformio.ini`
 
 ## 🚀 Overview
 
@@ -40,15 +45,25 @@ Originally based on the `WiFiClientSecure` for Arduino-ESP32 the SSLClient exten
 
 ## 🌟 What's New in the Latest Release
 
-**Major Versions 2 and 3 of MBedTLS**: Updated to support the latest version of the MBedTLS library.  
+- **Major Versions 2 and 3 of MBedTLS**: Updated to support the latest version of the MBedTLS library.  
 
-**ALPN Support**: Application Layer Protocol Negotiation for efficient server communication.  
+- **Feature flag for compatibility with MbedTLS v3.x.x** - Automated by `MBEDTLS_VERSION_MAJOR`.
 
-**Cert Bundles**: Simplifies management and use of multiple CA certificates.  
+- **Add Flag `MBEDTLS_BACKPORT`** to allow override `MBEDTLS_VERSION_MAJOR >= 3`.
 
-**Bug Fix**: Corrects byte calculation for record expansion post-handshake.
+- **Add workaround for W5500 Ethernet failing** due to client returning -1 when no error - switch on flag `W5500_WORKAROUND`.
 
-**More Examples**: Examples for the ESP32 PlatformIO for ALPN protocols, AWS, and using certificate bundles.
+- **Close the following issues:** Support for ESP32 and W5500 based Secure Ethernet for HTTPS or MQTTS? [#44](https://github.com/govorox/SSLClient/issues/85) and issue SSLClient with W5500 not working (works well with WiFi and TinyGSM) [#85](https://github.com/govorox/SSLClient/issues/85).
+
+- **Improve documentation**
+
+- **Add GitHub Actions workflow** to ensure PlatformIO examples compile.
+
+- **Update GitHub Actions workflow** to run tests multiple times with feature flags set.
+
+- **Add GitHub Actions workflow** to ensure Arduino IDE compile.
+
+- **Fix Arduino IDE examples to compile** when using `arduino-esp32@2.0.17` - This is still broken for `@3.0.2`. There is a breaking change in `arduino-esp32` from `v3.0.0` which is causing ambiguous reference errors to byte.
 
 ## ✨ Features
 
