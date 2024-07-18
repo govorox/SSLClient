@@ -580,6 +580,7 @@ int auth_client_cert_key(sslclient__context *ssl_client, const char *cli_cert, c
 #else
     ret = mbedtls_pk_parse_key(&ssl_client->client_key, (const unsigned char *)cli_key, strlen(cli_key) + 1, NULL, 0);
 #endif
+#endif
     if (ret != 0) { // PK or PEM non-zero error codes
       mbedtls_x509_crt_free(&ssl_client->client_cert); // cert+key are free'd in pair
       return ret;
@@ -829,6 +830,7 @@ void stop_ssl_socket(sslclient__context *ssl_client, const char *rootCABuff, con
 #else
   if (ssl_client->ssl_conf.ca_chain != NULL) {
 #endif
+#endif
     log_d("Freeing CA cert. Current ca_cert address: %p", (void *)&ssl_client->ca_cert);
 
     // Free the memory associated with the CA certificate
@@ -838,6 +840,7 @@ void stop_ssl_socket(sslclient__context *ssl_client, const char *rootCABuff, con
   if (ssl_client->ssl_conf.private_key_cert != NULL) {
 #else
   if (ssl_client->ssl_conf.key_cert != NULL) {
+#endif
 #endif
     log_d("Freeing client cert and client key. Current client_cert address: %p, client_key address: %p", 
           (void *)&ssl_client->client_cert, (void *)&ssl_client->client_key);
