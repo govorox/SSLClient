@@ -8,17 +8,46 @@
 [![License](https://img.shields.io/badge/License-MIT-blue)](#license)
 [![issues - SSLClient](https://img.shields.io/github/issues/govorox/SSLClient)](https://github.com/govorox/SSLClient/issues)
 
+## Table of Contents
+
+1. [Installation](#-installation) - How to install the library using Arduino or PlatformIO.
+2. [Overview of this Library](#-overview) - An overview of the SSLClient library.
+3. [What's New](#-whats-new-in-the-latest-release) - The latest features and updates.
+4. [Features](#-features) - Key features of the SSLClient library.
+5. [Usage](#-usage) - Basic usage examples for the SSLClient library.
+6. [Overview of Functions](docs/FUNCTIONS.md) - An overview of the API for leveraging MbedTLS.
+7. [Contribute](docs/CONTRIBUTING.md) - Contributions are welcome!
+8. [Change Log](docs/CHANGELOG.md) - See what's new in each release.
+9. [Code Guide](docs/CODEGUIDE.md) - Guidelines for contributing to the project.
+10. [Signal Strength Map](docs/RSSI.md) - Useful for debugging GSM connectivity.
+11. [License](#-license) - The license for the SSLClient library (open-source).
+
+## 🔧 Installation
+
+Install via the Arduino Library Manager or PlatformIO plugin:
+
+[![arduino-library-badge](https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino)](https://www.arduinolibraries.info/libraries/govorox-ssl-client "Go to Arduino Libraries")
+
+**Arduino IDE** - search for "SSLClient"
+
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient "Go to PlatformIO Registry")
+
+**VSCode / PlatformIO** - add `digitaldragon/SSLClient@^1.3.0` to `platformio.ini`
+
 ## 🚀 Overview
 
-SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, providing a transparent SSL/TLS layer over any **Client** class instance. Leverages *mbedtls* for robust, efficient cryptographic operations, initially tailored for ESP32 but adaptable across platforms.
+Originally based on the `WiFiClientSecure` for Arduino-ESP32 the SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, providing a transparent SSL/TLS layer over any `Client` class instance. Leverages *mbedtls* for robust, efficient cryptographic operations, initially tailored for ESP32 but adaptable across platforms.
 
-Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure) for Arduino/ESP32.
+## 🌟 What's New in the Latest Release
 
-## 🌟 What's New
-**Major Versions 2 and 3 of MBedTLS**: Updated to support the latest versions of the MBedTLS library.  
+**Major Versions 2 and 3 of MBedTLS**: Updated to support the latest version of the MBedTLS library.  
+
 **ALPN Support**: Application Layer Protocol Negotiation for efficient server communication.  
+
 **Cert Bundles**: Simplifies management and use of multiple CA certificates.  
+
 **Bug Fix**: Corrects byte calculation for record expansion post-handshake.
+
 **More Examples**: Examples for the ESP32 PlatformIO for ALPN protocols, AWS, and using certificate bundles.
 
 ## ✨ Features
@@ -35,20 +64,8 @@ Based on the [WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/
     **Specifics:**
     `TLS 1.2`: Continues full support with extensive cipher suites and features.
     `TLS 1.3`: Introduced in Mbed `TLS 3.x`, providing enhanced security features, improved performance, and simplified handshake process.
-- Compatible with Arduino/ESP32 and potentially other platforms.
+- Compatible with Arduino-ESP32 and potentially other platforms.
 - Suitable for IoT applications, including AWS IoT.
-
-## 🔧 Installation
-
-Install via the Arduino Library Manager or PlatformIO plugin:
-
-[![arduino-library-badge](https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino)](https://www.arduinolibraries.info/libraries/govorox-ssl-client "Go to Arduino Libraries")
-
-**Arduino IDE** - search for "SSLClient"
-
-[![PlatformIO Registry](https://badges.registry.platformio.org/packages/digitaldragon/library/SSLClient.svg)](https://registry.platformio.org/libraries/digitaldragon/SSLClient "Go to PlatformIO Registry")
-
-**VSCode / PlatformIO** - add `digitaldragon/SSLClient@^1.3.0` to `platformio.ini`
 
 ## 🛠 Usage
 
@@ -58,6 +75,7 @@ Install via the Arduino Library Manager or PlatformIO plugin:
 #include <SSLClient.h>
 
 // Initialize your transport layer (e.g., WiFi, GSM)
+// A Client is anything which inherits from the Arduino Client class.
 Client transport = /* Your transport layer */;
 
 // Create SSLClient instance
@@ -82,27 +100,6 @@ MQTTClient mqtt = MQTTClient(256);
 mqtt.begin(AWS_IOT_ENDPOINT, 8883, secure);
 ```
 
-### For details on the functions, see [📚 Function Notes](docs/FUNCTIONS.md)
-
-## 🖥 Contributions Welcome
-
-Contributions are welcome! Please fork the repository and submit pull requests with your enhancements. For more information on contributing, please refer to the [Contributing Guide](docs/CONTRIBUTING.md).
-
-## For more details, see the [Change Log](docs/CHANGELOG.md).
-
-
 ## 📄 License
 
-The library is released under GNU General Public Licence. See the LICENSE file for more details.
-
-## 📶 Handy CSQ / RSSI / Signal Strength Mapping
-
-| CSQ Value | RSSI (dBm)          | Description      |
-|-----------|---------------------|------------------|
-| 0         | -113 dBm or less    | No signal        |
-| 1-2       | -111 dBm to -109 dBm| Very poor signal |
-| 3-9       | -107 dBm to -93 dBm | Poor signal      |
-| 10-14     | -91 dBm to -83 dBm  | Fair signal      |
-| 15-19     | -81 dBm to -73 dBm  | Good signal      |
-| 20-30     | -71 dBm to -53 dBm  | Very good signal |
-| 31        | -51 dBm or more     | Excellent signal |
+The library is released under GNU General Public Licence. See the `LICENSE` file for more details.
