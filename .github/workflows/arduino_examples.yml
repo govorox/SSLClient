@@ -39,12 +39,12 @@ jobs:
         arduino-cli lib install "PubSubClient"
         arduino-cli lib install "TinyGSM"
 
-    # - name: Compile Examples for Arduino-ESP32@2.0.17
-    #   run: |
-    #     arduino-cli core install esp32:esp32@2.0.17
-    #     ./.github/workflows/scripts/compile_arduino_examples.sh --clean
-
-    - name: Compile Examples for Arduino-ESP32@3.0.2
+    - name: Compile Examples for Arduino-ESP32@2.0.17
       run: |
-        arduino-cli core install esp32:esp32@3.0.2
+        arduino-cli core install esp32:esp32@2.0.17
         ./.github/workflows/scripts/compile_arduino_examples.sh --clean
+
+    # - name: Compile Examples for Arduino-ESP32@3.0.2
+    #   run: |
+    #     arduino-cli core install esp32:esp32@3.0.2
+    #     ./.github/workflows/scripts/compile_arduino_examples.sh --clean
