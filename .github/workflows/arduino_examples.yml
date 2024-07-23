@@ -1,6 +1,10 @@
 name: Build Arduino Examples
 
-on: [pull_request]
+on: 
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
 
 jobs:
   build:
