@@ -34,7 +34,6 @@
 #define SSL_CLIENT_UNRELIABLE_NETWORK_HANDSHAKE_TIMEOUT 45000U
 #define SSL_CLIENT_SEND_BUFFER_SIZE 1024U
 
-using namespace std;
 
 typedef struct sslclient__context {
   Client* client;

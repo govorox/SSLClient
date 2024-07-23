@@ -13,6 +13,8 @@
 #include "certBundle.h"
 #include <string>
 
+using namespace std;
+
 #if !defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
 #  error "Please configure IDF framework to include mbedTLS -> Enable pre-shared-key ciphersuites and activate at least one cipher"
 #endif
@@ -966,7 +968,7 @@ static bool parse_hex_nibble(char pb, uint8_t* res) {
  * \param domainName    const string& - The domain name. 
  * \return bool         True if the name from certificate and domain name match, false otherwise.  
  */
-static bool match_name(const std::string& name, const std::string& domainName) {
+static bool match_name(const string& name, const string& domainName) {
   size_t wildcardPos = name.find("*");
   if (wildcardPos == (size_t)12) {
     return false; // We don't support wildcards for subdomains
