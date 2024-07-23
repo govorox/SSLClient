@@ -966,7 +966,7 @@ static bool parse_hex_nibble(char pb, uint8_t* res) {
  * \param domainName    const string& - The domain name. 
  * \return bool         True if the name from certificate and domain name match, false otherwise.  
  */
-static bool match_name(const string& name, const string& domainName) {
+static bool match_name(const std::string& name, const std::string& domainName) {
   size_t wildcardPos = name.find("*");
   if (wildcardPos == (size_t)12) {
     return false; // We don't support wildcards for subdomains
