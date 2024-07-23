@@ -26,6 +26,7 @@ jobs:
     - name: Install PlatformIO
       run: |
         pip install platformio
+        pio --version
 
     - name: Set Environment MBEDTLS_VERSION_MAJOR Variable
       run: echo "MBEDTLS_VERSION_MAJOR=3" >> $GITHUB_ENV
