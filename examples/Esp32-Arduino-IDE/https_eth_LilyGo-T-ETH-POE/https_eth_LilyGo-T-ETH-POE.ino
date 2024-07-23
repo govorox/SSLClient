@@ -22,7 +22,7 @@
 #define ETH_CLK_MODE ETH_CLOCK_GPIO17_OUT
 #define ETH_POWER_PIN -1
 #define ETH_TYPE ETH_PHY_LAN8720
-#define ETH_ADDR 1 // Update this according to the required value
+#define ETH_ADDR 1 // Update this according to the required value for v3.x.x and 0 for v2.x.x
 #define ETH_MDC_PIN 23
 #define ETH_MDIO_PIN 18
 
@@ -37,18 +37,36 @@ HttpClient http_client = HttpClient(secure_presentation_layer, hostname, port);
 static bool eth_connected = false;
 
 // Ethernet events
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
 void ETHEvent(WiFiEvent_t event, WiFiEventInfo_t info)
+#else
+void ETHEvent(WiFiEvent_t event)
+#endif
 {
   switch (event)
   {
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
   case ARDUINO_EVENT_ETH_START:
+  #else
+  case SYSTEM_EVENT_ETH_START:
+  #endif
     Serial.println("ETH Started");
     ETH.setHostname("esp32-ethernet");
     break;
+  
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
   case ARDUINO_EVENT_ETH_CONNECTED:
+  #else
+  case SYSTEM_EVENT_ETH_CONNECTED:
+  #endif
     Serial.println("ETH Connected");
     break;
+  
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
   case ARDUINO_EVENT_ETH_GOT_IP:
+  #else
+  case SYSTEM_EVENT_ETH_GOT_IP:
+  #endif
     Serial.print("ETH MAC: ");
     Serial.print(ETH.macAddress());
     Serial.print(", IPv4: ");
@@ -62,14 +80,25 @@ void ETHEvent(WiFiEvent_t event, WiFiEventInfo_t info)
     Serial.println("Mbps");
     eth_connected = true;
     break;
+
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
   case ARDUINO_EVENT_ETH_DISCONNECTED:
+  #else
+  case SYSTEM_EVENT_ETH_DISCONNECTED:
+  #endif
     Serial.println("ETH Disconnected");
     eth_connected = false;
     break;
+  
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
   case ARDUINO_EVENT_ETH_STOP:
+  #else
+  case SYSTEM_EVENT_ETH_STOP:
+  #endif
     Serial.println("ETH Stopped");
     eth_connected = false;
     break;
+
   default:
     break;
   }
@@ -81,7 +110,11 @@ void setup()
 
   Serial.println("Starting ETH");
   WiFi.onEvent(ETHEvent);
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
   ETH.begin(ETH_TYPE, ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_CLK_MODE);
+  #else
+  ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
+  #endif
   while (!eth_connected)
   {
     Serial.println("Connecting to ETH..");
