@@ -6,11 +6,11 @@ CLEAN=false
 
 # Environments to test
 ENVIRONMENTS=(
-  # "esp32dev" 
-  # "esp32doit-devkit-v1" 
-  # "esp-wrover-kit" 
-  # "esp32dev-framework-v3" 
-  # "esp32doit-devkit-v1-framework-v3" 
+  "esp32dev" 
+  "esp32doit-devkit-v1" 
+  "esp-wrover-kit" 
+  "esp32dev-framework-v3" 
+  "esp32doit-devkit-v1-framework-v3" 
   "esp-wrover-kit-framework-v3"
 )
 
