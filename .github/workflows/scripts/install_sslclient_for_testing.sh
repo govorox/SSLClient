@@ -3,7 +3,7 @@
 rm -rf ~/SSLClient
 git clone https://github.com/govorox/SSLClient.git ~/SSLClient
 cd ~/SSLClient
-git checkout v1.3.0
+git checkout 95-release-130-fails-to-compile-on-arduino-esp32-v3
 mkdir -p SSLClient
 mv LICENSE library.properties src SSLClient/
 zip -r SSLClient.zip SSLClient
