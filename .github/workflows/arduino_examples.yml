@@ -34,7 +34,7 @@ jobs:
     - name: Install specific branch of GovoroxSSLClient
       run: |
         mkdir -p ~/Arduino/libraries
-        git clone --branch v1.3.0 https://github.com/govorox/SSLClient.git ~/Arduino/libraries/GovoroxSSLClient
+        git clone --branch 95-release-130-fails-to-compile-on-arduino-esp32-v3 https://github.com/govorox/SSLClient.git ~/Arduino/libraries/GovoroxSSLClient
 
     - name: Install other libs
       run: |
