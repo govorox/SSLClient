@@ -37,7 +37,7 @@
 
 **Arduino IDE** - search for `GovoroxSSLClient` inthe library manager (for now, ensure esp32 boards are installed to version `2.0.17` and no higher)
 
-**PlatformIO** - add `digitaldragon/SSLClient@^1.3.0` to `platformio.ini`
+**PlatformIO** - add `digitaldragon/SSLClient@^1.3.1` to `platformio.ini`
 
 ## 🚀 Overview
 
