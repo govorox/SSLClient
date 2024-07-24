@@ -3,6 +3,7 @@
 #include <ArduinoHttpClient.h>
 #include "ca_cert.h"
 #include <Wire.h>
+#include <string>
 
 #define MODEM_UART_BAUD 115200
 #define MODEM_RST 5
@@ -165,7 +166,7 @@ void loop() {
   serialMonitor.println("GPRS disconnected");
   digitalWrite(LED_PIN, LOW);
 
-  //Turn off the moden (if use, you need run setupModem() again)
+  //Turn off the modem (if use, you need run setupModem() again)
   //modem.poweroff();
   //serialMonitor.println("Modem poweroff");
   //delay(1000);

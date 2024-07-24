@@ -27,4 +27,4 @@ jobs:
 
     - name: Compile Examples
       run: |
-        ./.github/workflows/scripts/compile_pio_examples.sh --clean
+        ./scripts/compile_pio_examples.sh --clean

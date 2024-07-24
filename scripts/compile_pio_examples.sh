@@ -4,8 +4,15 @@
 ROOT_DIR=$(pwd)
 CLEAN=false
 
-# Boards to test
-BOARDS=("esp32dev" "esp32doit-devkit-v1" "esp-wrover-kit")
+# Environments to test
+ENVIRONMENTS=(
+  "esp32dev" 
+  "esp32doit-devkit-v1" 
+  "esp-wrover-kit" 
+  "esp32dev-framework-v3" 
+  "esp32doit-devkit-v1-framework-v3" 
+  "esp-wrover-kit-framework-v3"
+)
 
 # Parse command line options
 while [[ "$#" -gt 0 ]]; do
@@ -87,7 +94,7 @@ for example_dir in "$ROOT_DIR"/examples/Esp32-platformIO/*/; do
   echo "$example_dir"
   # Check if the directory contains platformio.ini
   if [ -f "$example_dir/platformio.ini" ]; then
-    for board in "${BOARDS[@]}"; do
+    for board in "${ENVIRONMENTS[@]}"; do
       compile_example "$example_dir" "$board"
     done
 
