@@ -25,7 +25,7 @@
 ## 🔧 Installation
 
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-  <a href="https://www.arduinolibraries.info/libraries/govorox-ssl-client" title="Go to Arduino Libraries">
+  <a href="https://www.arduino.cc/reference/en/libraries/govoroxsslclient/" title="Go to Arduino Libraries">
     <img src="https://img.shields.io/static/v1?label=Arduino%20Libraries&message=GovoroxSSLClient&color=orange&logo=arduino" alt="arduino-library-badge">
   </a>
   <a href="https://registry.platformio.org/libraries/digitaldragon/SSLClient" title="Go to PlatformIO Registry">
