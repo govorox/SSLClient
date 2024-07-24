@@ -35,15 +35,17 @@
 
 *Install via the Arduino IDE or PlatformIO:*
 
-**Arduino IDE** - search for `GovoroxSSLClient` inthe library manager (for now, ensure esp32 boards are installed to version `2.0.17` and no higher)
+**Arduino IDE** - search for `GovoroxSSLClient` in the library manager.
 
-**PlatformIO** - add `digitaldragon/SSLClient@^1.3.1` to `platformio.ini`
+**PlatformIO** - add `digitaldragon/SSLClient@^1.3.1` to `platformio.ini`.
 
 ## 🚀 Overview
 
 Originally based on the `WiFiClientSecure` for Arduino-ESP32 the SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, providing a transparent SSL/TLS layer over any `Client` class instance. Leverages *mbedtls* for robust, efficient cryptographic operations, initially tailored for ESP32 but adaptable across platforms.
 
 ## 🌟 What's New in the Latest Release
+
+- **Examples for PlatformIO and Arduino IDE**: Updated examples to work with both PlatformIO and Arduino IDE for both Arduino-ESP32@2.0.17 and Arduino-ESP32@>3.0.0.
 
 - **Major Versions 2 and 3 of MBedTLS**: Updated to support the latest version of the MBedTLS library.  
 
@@ -62,8 +64,6 @@ Originally based on the `WiFiClientSecure` for Arduino-ESP32 the SSLClient exten
 - **Update GitHub Actions workflow** to run tests multiple times with feature flags set.
 
 - **Add GitHub Actions workflow** to ensure Arduino IDE compile.
-
-- **Fix Arduino IDE examples to compile** when using `arduino-esp32@2.0.17` - This is still broken for `@3.0.2`. There is a breaking change in `arduino-esp32` from `v3.0.0` which is causing ambiguous reference errors to byte.
 
 ## ✨ Features
 
