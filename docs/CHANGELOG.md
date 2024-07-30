@@ -43,3 +43,11 @@
     - Update GitHub Actions workflow to run tests multiple times with feature flags set.
     - Add GitHub Actions workflow to ensure Arduino IDE compile.
     - Fix Arduino IDE examples to compile when using arduino-esp32 @2.0.17 - This is still broken for @3.0.2 There is a breaking change in arduino-esp32 from v3.0.0 which is causing ambiguous reference errors to byte.
+
+13. `v1.3.1`
+
+    - Patch to fixing compilation on Arduino IDE of examples
+
+14. `v1.3.2`
+
+    - Patch to update cert for https_get_sim7600 for Arduino IDE
