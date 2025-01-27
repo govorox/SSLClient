@@ -1,8 +1,7 @@
 {
   "name": "SSLClient",
   "version": "1.3.2",
-  "repository":
-  {
+  "repository": {
     "type": "git",
     "url": "https://github.com/govorox/SSLClient.git"
   },
@@ -10,9 +9,11 @@
   "keywords": "SSL,TLS,GSM,Arduino,Client,TinyGsmClient,mbedtls",
   "license": "GPL-3.0-or-later",
   "frameworks": "arduino",
-  "platforms": "esp32",
-  "authors":
-  [
+  "platforms": [
+    "esp32",
+    "espressif32"
+  ],
+  "authors": [
     {
       "name": "V Govorovski",
       "maintainer": true
