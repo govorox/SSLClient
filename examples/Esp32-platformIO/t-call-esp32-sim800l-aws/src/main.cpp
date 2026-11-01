@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include "SSLClient.h"
-#include <HttpClient.h>
-#include <Wire.h>
+#include <ArduinoHttpClient.h>
 #include <PubSubClient.h>
+#include <SSLClient.h>
+#include <Wire.h>
 #include <time.h>
 #include <sys/time.h>
 #include "ca_cert.h"

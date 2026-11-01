@@ -16,6 +16,8 @@
 #ifndef CERT_BUNDLE_H
 #define CERT_BUNDLE_H
 
+#include "log_.h"
+
 #ifndef SSL_CLIENT_TEST_ENVIRONMENT
 #include "mbedtls/ssl.h"
 #else

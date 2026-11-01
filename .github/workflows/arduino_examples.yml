@@ -1,0 +1,54 @@
+name: Build Arduino Examples
+
+on: 
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: Install pyserial
+      run: python3 -m pip install pyserial
+
+    - name: Install Arduino CLI
+      uses: arduino/setup-arduino-cli@v2
+
+    - name: Install Arduino Cores
+      run: |
+        arduino-cli config init
+        arduino-cli core update-index
+        arduino-cli core install arduino:avr
+
+    - name: Install specific branch of GovoroxSSLClient
+      run: |
+        mkdir -p ~/Arduino/libraries
+        git clone --branch 95-release-130-fails-to-compile-on-arduino-esp32-v3 https://github.com/govorox/SSLClient.git ~/Arduino/libraries/GovoroxSSLClient
+
+    - name: Install other libs
+      run: |
+        arduino-cli lib install "WiFi"
+        arduino-cli lib install "ArduinoHttpClient"
+        arduino-cli lib install "PubSubClient"
+        arduino-cli lib install "TinyGSM"
+
+    - name: Compile Examples for Arduino-ESP32@2.0.17
+      run: |
+        arduino-cli core install esp32:esp32@2.0.17
+        ./scripts/compile_arduino_examples.sh --clean
+
+    - name: Compile Examples for Arduino-ESP32@3.0.2
+      run: |
+        arduino-cli core install esp32:esp32@3.0.2
+        ./scripts/compile_arduino_examples.sh --clean

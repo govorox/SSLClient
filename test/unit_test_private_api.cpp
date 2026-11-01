@@ -25,8 +25,13 @@ sslclient__context *testContext; // Context for tests
 void setup_stop_ssl_socket(sslclient__context* ctx, Client* client) {
   ctx->ssl_conf.actual_ca_chain = (mbedtls_x509_crt*) malloc(sizeof(mbedtls_x509_crt));
   ctx->ssl_conf.actual_key_cert = &dummy_cert;
+#if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
+  ctx->ssl_conf.private_ca_chain = ctx->ssl_conf.actual_ca_chain;
+  ctx->ssl_conf.private_key_cert = ctx->ssl_conf.actual_key_cert;
+#else
   ctx->ssl_conf.ca_chain = ctx->ssl_conf.actual_ca_chain;
   ctx->ssl_conf.key_cert = ctx->ssl_conf.actual_key_cert;
+#endif
 }
 
 void setUp(void) {

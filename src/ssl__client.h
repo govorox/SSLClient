@@ -12,7 +12,11 @@
 #include <mbedtls/platform.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/oid.h>
+#if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
+#include <mbedtls/net_sockets.h>
+#else
 #include <mbedtls/net.h>
+#endif
 #include <mbedtls/debug.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/entropy.h>
@@ -29,8 +33,6 @@
 #define SSL_CLIENT_SLOW_NETWORK_HANDSHAKE_TIMEOUT 30000U
 #define SSL_CLIENT_UNRELIABLE_NETWORK_HANDSHAKE_TIMEOUT 45000U
 #define SSL_CLIENT_SEND_BUFFER_SIZE 1024U
-
-using namespace std;
 
 typedef struct sslclient__context {
   Client* client;

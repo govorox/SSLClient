@@ -8,7 +8,6 @@
  * Just comment them out.
  * https://simcom.ee/documents/SIM7600C/SIM7500_SIM7600%20Series_AT%20Command%20Manual_V1.01.pdf
  **************************************************************/
-
 #define TINY_GSM_MODEM_SIM7600
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
@@ -41,11 +40,11 @@ const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Server details to test TCP/SSL
-const char server[] = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
+const char server[] = "hookb.in";
+const char resource[] = "/eKKEKgbNZPCeYYRdZXDo";
 const int port = 443;
 
-#include <TinyGsmClient.h>
+#include <TinyGSM.h>
 #include <ArduinoHttpClient.h>
 #include "SSLClient.h"
 #include "utilities.h"
@@ -93,8 +92,8 @@ void setup()
     need to enable modulator, this pin must be set to high
     */
     pinMode(MODEM_FLIGHT, OUTPUT);
-    digitalWrite(MODEM_FLIGHT, HIGH);
-
+    digitalWrite(MODEM_FLIGHT, HIGH);    
+   
     //Add CA Certificate
     secure_layer.setCACert(root_ca);
 }
@@ -212,7 +211,6 @@ void loop()
         24 - HYBRID(CDMA and eHRPD)
     */
     modem.sendAT(GF("+CNSMOD?"));
-    if (modem.waitResponse(GF(GSM_NL "+CNSMOD:")) != 1) { }
     int nmodec = modem.stream.readStringUntil(',').toInt() != 0;
     int nmode = modem.stream.readStringUntil('\n').toInt();
     modem.waitResponse();
@@ -226,13 +224,32 @@ void loop()
 #endif
 
 #if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
+    
+    // Retrieve Time
+    String time;
+      do {
+        time = modem.getGSMDateTime(DATE_FULL).substring(0, 17);
+        delay(100);
+    } while (!time);
+    DBG("Current Network Time:", time);
+
+    // Retrieve Temperature
+    float temp;
+    do {
+        temp = modem.getTemperature();
+        delay(100);
+    } while (!temp);
+    DBG("Modem Temp:", temp);
+
     if (!modem.isGprsConnected()) {
         DBG("... not connected");
     } else {
         DBG("Connecting to ", server);
-        // Make a HTTPS GET request:
-        Serial.println("Making GET request securely...");
-        client.get(resource);
+        // Make a HTTPS POST request:
+        Serial.println("Making POST request securely");
+        String contentType = "Content-Type: application/json";
+        String postData = "{\"time\": \""+ time + "\", \"temp\": \"" + temp + "\"}";        
+        client.post(resource, contentType, postData);
         int status_code = client.responseStatusCode();
         String response = client.responseBody();
         
@@ -244,7 +261,7 @@ void loop()
         client.stop();        
     }
 #endif
-
+    
 #if TINY_GSM_TEST_GPRS
     modem.gprsDisconnect();
     light_sleep(5);

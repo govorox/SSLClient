@@ -18,7 +18,7 @@ public:
     return this->mock<int>("connect");
   }
 
-  size_t write(uint8_t byte) override {
+  size_t write(uint8_t a_byte_) override {
     return this->mock<size_t>("write");
   }
 

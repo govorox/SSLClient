@@ -6,10 +6,10 @@
  *
  **************************************************************/
 
-#include "WiFi.h"
-#include "SSLClient.h"
 //To make http request esay: https://github.com/arduino-libraries/ArduinoHttpClient
 #include <ArduinoHttpClient.h>
+#include "WiFi.h"
+#include "SSLClient.h"
 
 //Please enter your CA certificate in ca_cert.h
 #include "secrets.h"

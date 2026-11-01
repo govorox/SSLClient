@@ -12,9 +12,9 @@
  *                https://github.com/Xinyuan-LilyGO/LilyGO-T-SIM7000G/blob/master/examples/Arduino_Azure_IoTHub/Arduino_Azure_IoTHub.ino
  * 
  **************************************************************/
-#include "SSLClient.h"
 //To make http request esay: https://github.com/arduino-libraries/ArduinoHttpClient
 #include <ArduinoHttpClient.h>
+#include "SSLClient.h"
 
 //Please enter your CA certificate in ca_cert.h
 #include "ca_cert.h"
