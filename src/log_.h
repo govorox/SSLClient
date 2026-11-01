@@ -62,4 +62,16 @@
 
 #endif // SSL_CLIENT_TEST_ENVIRONMENT
 
+// Additional library-only cap; the platform's logging level still applies.
+// 0=off, 1=error, 2=warning, 3=info, 4=debug, 5=verbose.
+#ifndef SSL_CLIENT_LOG_LEVEL
+#define SSL_CLIENT_LOG_LEVEL 5
+#endif
+
+#define SSL_CLIENT_LOG_E(...) do { if (SSL_CLIENT_LOG_LEVEL >= 1) { log_e(__VA_ARGS__); } } while (0)
+#define SSL_CLIENT_LOG_W(...) do { if (SSL_CLIENT_LOG_LEVEL >= 2) { log_w(__VA_ARGS__); } } while (0)
+#define SSL_CLIENT_LOG_I(...) do { if (SSL_CLIENT_LOG_LEVEL >= 3) { log_i(__VA_ARGS__); } } while (0)
+#define SSL_CLIENT_LOG_D(...) do { if (SSL_CLIENT_LOG_LEVEL >= 4) { log_d(__VA_ARGS__); } } while (0)
+#define SSL_CLIENT_LOG_V(...) do { if (SSL_CLIENT_LOG_LEVEL >= 5) { log_v(__VA_ARGS__); } } while (0)
+
 #endif // LOG__H_

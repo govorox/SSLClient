@@ -47,7 +47,7 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
   mbedtls_x509_crt_init(&parent);
 
   if ( (ret = mbedtls_pk_parse_public_key(&parent.pk, pub_key_buf, pub_key_len) ) != 0) {
-    log_e("PK parse failed with error %X", ret);
+    SSL_CLIENT_LOG_E("PK parse failed with error %X", ret);
     goto cleanup;
   }
 
@@ -58,7 +58,7 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
 #else
   if (!mbedtls_pk_can_do(&parent.pk, child->sig_pk)) {
 #endif
-    log_e("Simple compare failed");
+    SSL_CLIENT_LOG_E("Simple compare failed");
     ret = -1;
     goto cleanup;
   }
@@ -69,7 +69,7 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
   md_info = mbedtls_md_info_from_type(child->sig_md);
 #endif
   if ( (ret = mbedtls_md( md_info, child->tbs.p, child->tbs.len, hash )) != 0 ) {
-    log_e("Internal mbedTLS error %X", ret);
+    SSL_CLIENT_LOG_E("Internal mbedTLS error %X", ret);
     goto cleanup;
   }
 #if (MBEDTLS_VERSION_MAJOR >= 3) && !defined(MBEDTLS_BACKPORT)
@@ -79,7 +79,7 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
   if ((ret = mbedtls_pk_verify_ext(child->sig_pk, child->sig_opts, &parent.pk, child->sig_md, hash, mbedtls_md_get_size( md_info ),
                                    child->sig.p, child->sig.len )) != 0 ) {
 #endif
-      log_e("PK verify failed with error %X", ret);
+      SSL_CLIENT_LOG_E("PK verify failed with error %X", ret);
       goto cleanup;
   }
 cleanup:
@@ -108,11 +108,11 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int depth, uint32_
 
 
   if (s_crt_bundle.crts == NULL) {
-    log_e("No certificates in bundle");
+    SSL_CLIENT_LOG_E("No certificates in bundle");
     return MBEDTLS_ERR_X509_FATAL_ERROR;
   }
 
-  log_d("%d certificates in bundle", s_crt_bundle.num_certs);
+  SSL_CLIENT_LOG_D("%d certificates in bundle", s_crt_bundle.num_certs);
 
   size_t name_len = 0;
   const uint8_t *crt_name;
@@ -146,12 +146,12 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int depth, uint32_
   }
 
   if (ret == 0) {
-    log_i("Certificate validated");
+    SSL_CLIENT_LOG_I("Certificate validated");
     *flags = 0;
     return 0;
   }
 
-  log_e("Failed to verify certificate");
+  SSL_CLIENT_LOG_E("Failed to verify certificate");
   return MBEDTLS_ERR_X509_FATAL_ERROR;
 }
 
@@ -164,7 +164,7 @@ static esp_err_t esp_crt_bundle_init(const uint8_t *x509_bundle) {
   s_crt_bundle.crts = calloc(s_crt_bundle.num_certs, sizeof(x509_bundle));
 
   if (s_crt_bundle.crts == NULL) {
-    log_e("Unable to allocate memory for bundle");
+    SSL_CLIENT_LOG_E("Unable to allocate memory for bundle");
     return ESP_ERR_NO_MEM;
   }
 
@@ -186,7 +186,7 @@ esp_err_t ssl_lib_crt_bundle_attach(void *conf) {
   esp_err_t ret = ESP_OK;
   // If no bundle has been set by the user then use the bundle embedded in the binary
   if (s_crt_bundle.crts == NULL) {
-    log_e("Failed to attach bundle");
+    SSL_CLIENT_LOG_E("Failed to attach bundle");
     return ret;
   }
 

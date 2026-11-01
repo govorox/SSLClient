@@ -23,6 +23,9 @@ jobs:
       with:
         python-version: '3.12'
 
+    - name: Test independent library logging levels
+      run: python scripts/test_logging.py
+
     - name: Install PlatformIO
       run: |
         pip install platformio
