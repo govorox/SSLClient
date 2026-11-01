@@ -25,6 +25,7 @@ done
 
 # Initialize results array
 declare -A RESULTS
+EXIT_STATUS=0
 
 # Function to compile the example for a specific board
 compile_example() {
@@ -41,6 +42,7 @@ compile_example() {
   if ! grep -q "\[env:$board\]" platformio.ini; then
     echo "Environment for board $board not defined in $example_dir/platformio.ini"
     RESULTS["$example_name,$board"]="Failed (environment not defined)"
+    EXIT_STATUS=1
     return 1
   fi
 
@@ -51,6 +53,7 @@ compile_example() {
   if [ $? -ne 0 ]; then
     echo "Compilation failed for $example_dir for board: $board" >> "$ROOT_DIR/compile_errors.log"
     RESULTS["$example_name,$board"]="Failed"
+    EXIT_STATUS=1
     return 1
   fi
 
@@ -114,3 +117,4 @@ for key in "${!RESULTS[@]}"; do
 done
 
 echo "All examples processed. Check compile_errors.log for any compilation errors."
+exit $EXIT_STATUS

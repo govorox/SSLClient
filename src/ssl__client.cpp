@@ -131,7 +131,9 @@ int client_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t 
   
   int result = client->read(buf, len);
   
-  if (!result) {
+  // Ethernet-style clients return -1 when no data is available yet.
+  // Only retry negative reads while the underlying connection is still open.
+  if (result == 0 || (result < 0 && client->connected())) {
     return MBEDTLS_ERR_SSL_WANT_READ;
   }
 

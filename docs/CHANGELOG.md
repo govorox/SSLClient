@@ -2,6 +2,13 @@
 
 # SSL Client Updates:
 
+## 1.3.3 - 2026-11-01
+
+- Fix Ethernet-style clients returning negative idle reads so TLS connections remain open while the underlying client is connected (#120).
+- Add receive regression tests and configure missing certificate-test mock return values.
+- Update CI Python setup and build examples against the checked-out source.
+- Update Arduino and PlatformIO release metadata and PlatformIO example dependencies.
+
 1. Added some commits of WifiSecureClient to fix some bugs.
 
 2. Change send_ssl_data to use size_t instead of uint16_t, commit a299ddc

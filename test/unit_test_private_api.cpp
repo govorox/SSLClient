@@ -326,6 +326,54 @@ void test_read_returns_zero(void) {
   TEST_ASSERT_EQUAL(MBEDTLS_ERR_SSL_WANT_READ, result);
 }
 
+void test_negative_read_while_connected_without_timeout(void) {
+  // Arrange
+  testClient.returns("available", (int)0);
+  testClient.returns("read", (int)-1);
+  unsigned char buf[10];
+
+  // Act
+  int first = client_net_recv_timeout(&testClient, buf, sizeof(buf), 0);
+  int idle = client_net_recv_timeout(&testClient, buf, sizeof(buf), 0);
+  testClient.reset();
+  testClient.returns("available", (int)5);
+  testClient.returns("read", (int)5);
+  int recovered = client_net_recv_timeout(&testClient, buf, sizeof(buf), 0);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_WANT_READ, first);
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_WANT_READ, idle);
+  TEST_ASSERT_EQUAL_INT(5, recovered);
+}
+
+void test_negative_read_while_connected_after_timeout(void) {
+  // Arrange
+  testClient.returns("available", (int)0);
+  testClient.returns("read", (int)-1);
+  unsigned char buf[10];
+
+  // Act
+  int result = client_net_recv_timeout(&testClient, buf, sizeof(buf), 100);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_SSL_WANT_READ, result);
+}
+
+void test_negative_read_while_disconnected(void) {
+  // Arrange
+  testClient.reset();
+  testClient.returns("available", (int)0);
+  testClient.returns("read", (int)-1);
+  testClient.returns("connected", (uint8_t)0);
+  unsigned char buf[10];
+
+  // Act
+  int result = client_net_recv_timeout(&testClient, buf, sizeof(buf), 0);
+
+  // Assert
+  TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
 void test_len_zero(void) {
   // Arrange
   unsigned char buf[10];
@@ -345,6 +393,9 @@ void run_client_net_recv_timeout_tests(void) {
   RUN_TEST(test_successful_read_with_delay);
   RUN_TEST(test_read_timeout);
   RUN_TEST(test_read_returns_zero);
+  RUN_TEST(test_negative_read_while_connected_without_timeout);
+  RUN_TEST(test_negative_read_while_connected_after_timeout);
+  RUN_TEST(test_negative_read_while_disconnected);
   RUN_TEST(test_len_zero);
   UNITY_END();
 }
@@ -1541,6 +1592,8 @@ void test_auth_client_cert_key_key_null() {
 void test_auth_client_cert_key_valid() {
   // Arrange
   mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", 0);
+  mbedtls_pk_parse_key_stub.returns("mbedtls_pk_parse_key", 0);
+  mbedtls_ssl_conf_own_cert_stub.returns("mbedtls_ssl_conf_own_cert", 0);
   bool cert_init = false, key_init = false;
 
   // Act
