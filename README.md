@@ -39,6 +39,27 @@
 
 **PlatformIO** - add `digitaldragon/SSLClient@^1.3.3` to `platformio.ini`.
 
+### Library logging
+
+To keep application debug messages while limiting SSLClient to warnings and errors,
+set these flags in your PlatformIO environment:
+
+```ini
+build_flags =
+  -D CORE_DEBUG_LEVEL=4
+  -D SSL_CLIENT_LOG_LEVEL=2
+```
+
+`SSL_CLIENT_LOG_LEVEL` accepts `0` (off), `1` (error), `2` (warning), `3` (info),
+`4` (debug), or `5` (verbose). It limits SSLClient's own messages, including
+certificate-bundle logging, without changing application or other-library logs.
+The default is `5`, preserving existing behavior; the ESP32 core's log level still
+limits which messages can appear. This does not control mbedTLS's separate debug
+facility.
+
+Apply the definition to the library compilation using build flags. A `#define`
+in a sketch alone does not configure separately compiled library source files.
+
 ## 🚀 Overview
 
 Originally based on the `WiFiClientSecure` for Arduino-ESP32 the SSLClient extends the ESP32/Arduino ecosystem to secure communication via TLS, providing a transparent SSL/TLS layer over any `Client` class instance. Leverages *mbedtls* for robust, efficient cryptographic operations, initially tailored for ESP32 but adaptable across platforms.

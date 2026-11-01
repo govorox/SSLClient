@@ -94,13 +94,13 @@ SSLClient::~SSLClient() {
 void SSLClient::stop() {
   if (sslclient->client != nullptr) {
     if (sslclient->client >= (void*)0) {
-      log_d("Stopping ssl client");
+      SSL_CLIENT_LOG_D("Stopping ssl client");
       stop_ssl_socket(sslclient, _CA_cert, _cert, _private_key);
     } else {
-      log_d("stop() not called because client is < 0");
+      SSL_CLIENT_LOG_D("stop() not called because client is < 0");
     }
   } else {
-    log_d("stop() not called because client is nullptr");
+    SSL_CLIENT_LOG_D("stop() not called because client is nullptr");
   }
   _connected = false;
   _peek = -1;
@@ -121,11 +121,11 @@ void SSLClient::stop() {
  */
 int SSLClient::connect(IPAddress ip, uint16_t port) {
   if (_pskIdent && _psKey) {
-    log_v("connect with PSK");
+    SSL_CLIENT_LOG_V("connect with PSK");
     return connect(ip, port, _pskIdent, _psKey);
   }
 
-  log_v("connect with CA");
+  SSL_CLIENT_LOG_V("connect with CA");
   return connect(ip, port, _CA_cert, _cert, _private_key);
 }
 
@@ -161,11 +161,11 @@ int SSLClient::connect(IPAddress ip, uint16_t port, int32_t timeout) {
  */
 int SSLClient::connect(const char *host, uint16_t port) {
   if (_pskIdent && _psKey) {
-    log_v("connect with PSK");
+    SSL_CLIENT_LOG_V("connect with PSK");
     return connect(host, port, _pskIdent, _psKey);
   }
 
-  log_v("connect with CA");
+  SSL_CLIENT_LOG_V("connect with CA");
   return connect(host, port, _CA_cert, _cert, _private_key);
 }
 
@@ -223,29 +223,29 @@ int SSLClient::connect(IPAddress ip, uint16_t port, const char *_CA_cert, const 
  */
 int SSLClient::connect(const char *host, uint16_t port, const char *_CA_cert, const char *_cert, const char *_private_key)
 {
-  log_v("Connecting to %s:%d", host, port);
-  log_v("Timeout value: %d", _timeout);
-  log_v("CA Certificate: %s", _CA_cert ? "Provided" : "Not Provided");
-  log_v("Client Certificate: %s", _cert ? "Provided" : "Not Provided");
-  log_v("Private Key: %s", _private_key ? "Provided" : "Not Provided");
+  SSL_CLIENT_LOG_V("Connecting to %s:%d", host, port);
+  SSL_CLIENT_LOG_V("Timeout value: %d", _timeout);
+  SSL_CLIENT_LOG_V("CA Certificate: %s", _CA_cert ? "Provided" : "Not Provided");
+  SSL_CLIENT_LOG_V("Client Certificate: %s", _cert ? "Provided" : "Not Provided");
+  SSL_CLIENT_LOG_V("Private Key: %s", _private_key ? "Provided" : "Not Provided");
 
   if(_timeout > 0){
     sslclient->handshake_timeout = _timeout;
-    log_v("Handshake timeout set to: %d", sslclient->handshake_timeout);
+    SSL_CLIENT_LOG_V("Handshake timeout set to: %d", sslclient->handshake_timeout);
   }
 
   int ret = start_ssl_client(sslclient, host, port, _timeout, _CA_cert, _use_ca_bundle, _cert, _private_key, NULL, NULL, _use_insecure, _alpn_protos);
   _lastError = ret;
-  log_v("Return value from start_ssl_client: %d", ret);
+  SSL_CLIENT_LOG_V("Return value from start_ssl_client: %d", ret);
 
   if (ret != 1) {
-    log_e("start_ssl_client failed: %d", ret);
+    SSL_CLIENT_LOG_E("start_ssl_client failed: %d", ret);
     stop();
     _connected = false;
     return 0;
   }
 
-  log_i("SSL connection established");
+  SSL_CLIENT_LOG_I("SSL connection established");
   _connected = true;
   return 1;
 }
@@ -282,7 +282,7 @@ int SSLClient::connect(IPAddress ip, uint16_t port, const char *pskIdent, const 
  * @return Returns 1 if the connection is established successfully, and 0 otherwise.
  */
 int SSLClient::connect(const char *host, uint16_t port, const char *pskIdent, const char *psKey) {
-  log_v("start_ssl_client with PSK");
+  SSL_CLIENT_LOG_V("start_ssl_client with PSK");
 
   if (_timeout > 0) {
     sslclient->handshake_timeout = _timeout;
@@ -292,7 +292,7 @@ int SSLClient::connect(const char *host, uint16_t port, const char *pskIdent, co
   _lastError = ret;
 
   if (ret < 0) {
-    log_e("start_ssl_client: %d", ret);
+    SSL_CLIENT_LOG_E("start_ssl_client: %d", ret);
     stop();
     return 0;
   }
@@ -373,15 +373,15 @@ size_t SSLClient::write(uint8_t data) {
  */
 size_t SSLClient::write(const uint8_t *buf, size_t size) {
   if (!_connected) {
-    log_w("SSLClient is not connected.");
+    SSL_CLIENT_LOG_W("SSLClient is not connected.");
     return 0;
   }
 
-  log_d("Sending data to SSL connection...");
+  SSL_CLIENT_LOG_D("Sending data to SSL connection...");
   int res = send_ssl_data(sslclient, buf, size);
   
   if (res < 0) {
-    log_e("Error sending data to SSL connection. Stopping SSLClient...");
+    SSL_CLIENT_LOG_E("Error sending data to SSL connection. Stopping SSLClient...");
     stop();
     res = 0;
   }
@@ -401,7 +401,7 @@ size_t SSLClient::write(const uint8_t *buf, size_t size) {
  * @return int  > 1 if res + peeked. 
  */
 int SSLClient::read(uint8_t *buf, size_t size) {
-  log_v("This is the iClient->read() implementation");
+  SSL_CLIENT_LOG_V("This is the iClient->read() implementation");
   int peeked = 0;
   int avail = available();
 
@@ -506,7 +506,7 @@ void SSLClient::setInsecure() {
  * @param rootCA The root CA certificate in its binary or PEM form.
  */
 void SSLClient::setCACert(const char *rootCA) {
-  log_d("Set root CA");
+  SSL_CLIENT_LOG_D("Set root CA");
   _CA_cert = rootCA;
   _use_insecure = false;
 }
@@ -541,7 +541,7 @@ void SSLClient::setCACertBundle(const uint8_t * bundle) {
  * @param client_ca The client certificate in its binary or PEM form.
  */
 void SSLClient::setCertificate(const char *client_ca) {
-  log_d("Set client CA");
+  SSL_CLIENT_LOG_D("Set client CA");
   _cert = client_ca;
 }
 
@@ -556,7 +556,7 @@ void SSLClient::setCertificate(const char *client_ca) {
  * @param private_key The private key in its binary or PEM form.
  */
 void SSLClient::setPrivateKey(const char *private_key) {
-  log_d("Set client PK");
+  SSL_CLIENT_LOG_D("Set client PK");
   _private_key = private_key;
 }
 
@@ -572,7 +572,7 @@ void SSLClient::setPrivateKey(const char *private_key) {
  * @param psKey    The Pre-Shared Key in its binary form.
  */
 void SSLClient::setPreSharedKey(const char *pskIdent, const char *psKey) {
-  log_d("Set PSK");
+  SSL_CLIENT_LOG_D("Set PSK");
   _pskIdent = pskIdent;
   _psKey = psKey;
 }
