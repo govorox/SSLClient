@@ -25,6 +25,12 @@ jobs:
         pip install platformio
         pio --version
 
+    - name: Use checked-out SSLClient in examples
+      run: |
+        for config in examples/Esp32-platformIO/*/platformio.ini; do
+          sed -i "s|digitaldragon/SSLClient@\^1.3.3|SSLClient=symlink://${GITHUB_WORKSPACE}|" "$config"
+        done
+
     - name: Compile Examples
       run: |
         ./scripts/compile_pio_examples.sh --clean

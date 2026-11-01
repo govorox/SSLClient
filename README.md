@@ -37,7 +37,7 @@
 
 **Arduino IDE** - search for `GovoroxSSLClient` in the library manager.
 
-**PlatformIO** - add `digitaldragon/SSLClient@^1.3.1` to `platformio.ini`.
+**PlatformIO** - add `digitaldragon/SSLClient@^1.3.3` to `platformio.ini`.
 
 ## 🚀 Overview
 

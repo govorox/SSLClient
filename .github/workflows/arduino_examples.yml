@@ -31,10 +31,12 @@ jobs:
         arduino-cli core update-index
         arduino-cli core install arduino:avr
 
-    - name: Install specific branch of GovoroxSSLClient
+    - name: Install checked-out GovoroxSSLClient
       run: |
         mkdir -p ~/Arduino/libraries
-        git clone --branch 95-release-130-fails-to-compile-on-arduino-esp32-v3 https://github.com/govorox/SSLClient.git ~/Arduino/libraries/GovoroxSSLClient
+        mkdir -p ~/Arduino/libraries/GovoroxSSLClient
+        cp library.properties ~/Arduino/libraries/GovoroxSSLClient/
+        cp -r src ~/Arduino/libraries/GovoroxSSLClient/
 
     - name: Install other libs
       run: |
