@@ -5,7 +5,7 @@
 [![forks - SSLClient](https://img.shields.io/github/forks/govorox/SSLClient?style=social)](https://github.com/govorox/SSLClient)
 
 [![GitHub tag](https://img.shields.io/github/tag/govorox/SSLClient?include_prereleases=&sort=semver&color=blue)](https://github.com/govorox/SSLClient/releases/)
-[![License](https://img.shields.io/badge/License-MIT-blue)](#license)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue)](LICENSE)
 [![issues - SSLClient](https://img.shields.io/github/issues/govorox/SSLClient)](https://github.com/govorox/SSLClient/issues)
 
 ## Table of Contents
