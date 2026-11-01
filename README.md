@@ -37,7 +37,7 @@
 
 **Arduino IDE** - search for `GovoroxSSLClient` in the library manager.
 
-**PlatformIO** - add `digitaldragon/SSLClient@^1.3.3` to `platformio.ini`.
+**PlatformIO** - add `digitaldragon/SSLClient@^1.4.0` to `platformio.ini`.
 
 ### Library logging
 
@@ -66,25 +66,22 @@ Originally based on the `WiFiClientSecure` for Arduino-ESP32 the SSLClient exten
 
 ## 🌟 What's New in the Latest Release
 
-- **Examples for PlatformIO and Arduino IDE**: Updated examples to work with both PlatformIO and Arduino IDE for both Arduino-ESP32@2.0.17 and Arduino-ESP32@>3.0.0.
+**1.4.0** adds independent library logging control:
 
-- **Major Versions 2 and 3 of MBedTLS**: Updated to support the latest version of the MBedTLS library.  
+- Keep application debug logs while limiting SSLClient to warnings/errors with
+  `SSL_CLIENT_LOG_LEVEL=2`, or disable library messages with `0`. See
+  [Library logging](#library-logging) for the build flags and all supported levels.
+- Existing logging behavior is preserved by default. No migration is required.
+- CI checks the logging levels alongside native tests and Arduino/PlatformIO examples.
+- The licence badge now matches the existing GPL-3.0-or-later declaration. This
+  documentation correction does not change the licence.
 
-- **Feature flag for compatibility with MbedTLS v3.x.x** - Automated by `MBEDTLS_VERSION_MAJOR`.
+This release also includes the **1.3.3 Ethernet idle-read fix**: negative reads
+while the underlying client remains connected are treated as retry conditions.
+That handling is automatic and does not require `W5500_WORKAROUND`. It does not
+establish compatibility with every Ethernet hardware/library combination.
 
-- **Add Flag `MBEDTLS_BACKPORT`** to allow override `MBEDTLS_VERSION_MAJOR >= 3`.
-
-- **Add workaround for W5500 Ethernet failing** due to client returning -1 when no error - switch on flag `W5500_WORKAROUND`.
-
-- **Close the following issues:** Support for ESP32 and W5500 based Secure Ethernet for HTTPS or MQTTS? [#44](https://github.com/govorox/SSLClient/issues/85) and issue SSLClient with W5500 not working (works well with WiFi and TinyGSM) [#85](https://github.com/govorox/SSLClient/issues/85).
-
-- **Improve documentation**
-
-- **Add GitHub Actions workflow** to ensure PlatformIO examples compile.
-
-- **Update GitHub Actions workflow** to run tests multiple times with feature flags set.
-
-- **Add GitHub Actions workflow** to ensure Arduino IDE compile.
+See the [changelog](docs/CHANGELOG.md) for earlier releases and details.
 
 ## ✨ Features
 
