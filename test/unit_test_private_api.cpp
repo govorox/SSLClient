@@ -1592,6 +1592,8 @@ void test_auth_client_cert_key_key_null() {
 void test_auth_client_cert_key_valid() {
   // Arrange
   mbedtls_x509_crt_parse_stub.returns("mbedtls_x509_crt_parse", 0);
+  mbedtls_pk_parse_key_stub.returns("mbedtls_pk_parse_key", 0);
+  mbedtls_ssl_conf_own_cert_stub.returns("mbedtls_ssl_conf_own_cert", 0);
   bool cert_init = false, key_init = false;
 
   // Act
