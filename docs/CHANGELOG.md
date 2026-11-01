@@ -2,6 +2,15 @@
 
 # SSL Client Updates:
 
+## 1.4.0 - 2026-11-01
+
+- Add `SSL_CLIENT_LOG_LEVEL` to limit library and certificate-bundle logging independently of application logs (#107, PR #123).
+- Preserve existing logging by default; support levels 0 (off) through 5 (verbose).
+- Add isolated compiler checks for all logging levels and retain native and firmware build coverage.
+- Correct the README licence badge to match the existing GPL-3.0-or-later declaration; this is not a licence change.
+- Remove the unreliable Issue Checker workflow.
+- Synchronize Arduino/PlatformIO metadata, installation instructions, and example dependencies for 1.4.0.
+
 ## 1.3.3 - 2026-11-01
 
 - Fix Ethernet-style clients returning negative idle reads so TLS connections remain open while the underlying client is connected (#120).

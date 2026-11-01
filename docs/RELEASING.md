@@ -2,7 +2,7 @@
 
 1. Update `library.properties` and `library.json` to the same new version. Keep the registered names `GovoroxSSLClient` (Arduino) and `SSLClient` under `digitaldragon` (PlatformIO).
 2. Update the README installation version, PlatformIO example dependencies, and changelog. Keep the PlatformIO example CI override aligned with the example dependency version.
-3. Wait for all PR checks to pass, merge into `master`, and tag the merged commit using the existing convention, for example `1.3.3`.
+3. Wait for all PR checks to pass, merge into `master`, and tag the merged commit using the existing convention, for example `1.4.0`.
 
 ## Arduino Library Manager
 
@@ -18,11 +18,11 @@ A Git tag alone does not publish the package. From a clean checkout of the relea
 
 ```sh
 pio account login
-pio pkg pack --output SSLClient-1.3.3.tar.gz
+pio pkg pack --output SSLClient-1.4.0.tar.gz
 # Inspect the archive contents before publishing.
-pio pkg publish SSLClient-1.3.3.tar.gz --owner digitaldragon --type library
+pio pkg publish SSLClient-1.4.0.tar.gz --owner digitaldragon --type library
 ```
 
-Confirm `1.3.3` appears in [the PlatformIO listing](https://registry.platformio.org/libraries/digitaldragon/SSLClient), then verify installation with `digitaldragon/SSLClient@1.3.3`. Published name/version pairs cannot be reused, even after unpublishing.
+Confirm `1.4.0` appears in [the PlatformIO listing](https://registry.platformio.org/libraries/digitaldragon/SSLClient), then verify installation with `digitaldragon/SSLClient@1.4.0`. Published name/version pairs cannot be reused, even after unpublishing.
 
 Source: [PlatformIO publishing documentation](https://docs.platformio.org/en/latest/core/userguide/pkg/cmd_publish.html).

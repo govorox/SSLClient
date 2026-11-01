@@ -1,11 +1,11 @@
 {
   "name": "SSLClient",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/govorox/SSLClient.git"
   },
-  "description": "Provides secure network connection over a generic Arduino Client trasport object. The library can help to establish a TLS or SSL connection to a remote server via TinyGsmClient.",
+  "description": "Provides TLS/SSL connections over a generic Arduino Client transport, including TinyGSM and Ethernet, with independently configurable library logging.",
   "keywords": "SSL,TLS,GSM,Arduino,Client,TinyGsmClient,mbedtls",
   "license": "GPL-3.0-or-later",
   "frameworks": "arduino",
