@@ -1,0 +1,19 @@
+name: Build ESP-IDF Arduino component
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.1.4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and link component smoke example
+        shell: bash
+        run: |
+          . /opt/esp/idf/export.sh
+          idf.py -C examples/Esp32-ESP-IDF/component_smoke set-target esp32
+          idf.py -C examples/Esp32-ESP-IDF/component_smoke build
