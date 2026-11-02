@@ -5,3 +5,9 @@ test.log
 emulation.log
 compile_errors.log
 compile_output.txt
+
+# ESP-IDF example build products
+examples/Esp32-ESP-IDF/**/build/
+examples/Esp32-ESP-IDF/**/managed_components/
+examples/Esp32-ESP-IDF/**/sdkconfig
+examples/Esp32-ESP-IDF/**/sdkconfig.old

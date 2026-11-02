@@ -1,0 +1,7 @@
+description: "SSLClient TLS wrapper for Arduino Client transports in ESP-IDF projects"
+url: "https://github.com/govorox/SSLClient"
+dependencies:
+  idf: ">=5.1.0,<5.2.0"
+  espressif/arduino-esp32:
+    version: "==3.0.2"
+    require: public

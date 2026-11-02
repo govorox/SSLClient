@@ -39,6 +39,10 @@
 
 **PlatformIO** - add `digitaldragon/SSLClient@^1.4.0` to `platformio.ini`.
 
+**ESP-IDF with Arduino as a component (development branch)** - see the
+[component build guide](docs/ESP-IDF.md) and included smoke example. This route
+retains Arduino as a dependency and is not part of the 1.4.0 registry package.
+
 ### Library logging
 
 To keep application debug messages while limiting SSLClient to warnings and errors,
