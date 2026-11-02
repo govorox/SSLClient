@@ -17,8 +17,9 @@ idf.py -C examples/Esp32-ESP-IDF/component_smoke set-target esp32
 idf.py -C examples/Esp32-ESP-IDF/component_smoke build
 ```
 
-The component manager downloads Arduino and its dependencies. Internet access is
-required on the first build. The example uses this checkout through
+The component manager downloads Arduino and its dependencies using the example's
+committed `dependencies.lock`. Internet access is required on the first build.
+Keep the lock file when reproducing the supported build. The example uses this checkout through
 `EXTRA_COMPONENT_DIRS`, so it tests the branch's source rather than a release.
 
 The smoke application calls `initArduino()`, constructs an Arduino Wi-Fi transport
